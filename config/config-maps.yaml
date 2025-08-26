@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "k8s-ces-gateway.name" . }}-tcp-services
+  labels:
+     {{- include "k8s-ces-gateway.labels" . | nindent 4 }}
+  finalizers:
+    - "cloudogu.com/nginx-tcp-services"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "k8s-ces-gateway.name" . }}-udp-services
+  labels:
+     {{- include "k8s-ces-gateway.labels" . | nindent 4 }}
+  finalizers:
+    - "cloudogu.com/nginx-udp-services"
+---
+# Configmap for the general nginx-ingress-controller configuration
+# see https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/configmap/
+apiVersion: v1
+data:
+  allow-snippet-annotations: "true"
+  annotations-risk-level: "Critical"
+  proxy-set-headers: "{{ .Namespace }}/{{ include "k8s-ces-gateway.name" . }}-nginx-ingress-custom-headers"
+kind: ConfigMap
+metadata:
+  name: {{ include "k8s-ces-gateway.name" . }}-nginx-ingress
+---
+# Configmap for adding custom headers before sending traffic to backends
+# see https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/configmap/#proxy-set-headers
+apiVersion: v1
+data:
+  # Disable gzip encoding for proxy applications, so that the response can be processed by subfilters
+  Accept-Encoding: "identity"
+kind: ConfigMap
+metadata:
+  name: {{ include "k8s-ces-gateway.name" . }}-nginx-ingress-custom-headers

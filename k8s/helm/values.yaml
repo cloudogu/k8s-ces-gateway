@@ -1,0 +1,22 @@
+networkPolicies:
+  enabled: true
+global:
+  imagePullSecrets:
+    - name: "ces-container-registries"
+  networkPolicies:
+    enabled: true
+additionalImages: []
+controllerManager:
+  image:
+    registry: docker.io
+    repository: cloudogu/k8s-ces-gateway
+    tag: 0.0.1
+  imagePullPolicy: IfNotPresent
+  env:
+    logLevel: debug
+    stage: development
+  resourceLimits:
+    memory: 105M
+  resourceRequests:
+    cpu: 15m
+    memory: 105M
