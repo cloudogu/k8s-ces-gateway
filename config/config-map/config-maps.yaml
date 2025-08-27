@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tcp-services
+  labels:
+     {{- include "k8s-ces-gateway.labels" . | nindent 4 }}
+  finalizers:
+    - "cloudogu.com/nginx-tcp-services"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: udp-services
+  labels:
+     {{- include "k8s-ces-gateway.labels" . | nindent 4 }}
+  finalizers:
+    - "cloudogu.com/nginx-udp-services"
