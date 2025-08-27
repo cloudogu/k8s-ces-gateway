@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-ingress
+  labels:
+  {{- include "k8s-ces-gateway.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP   # oder NodePort
+  selector:
+    k8s.cloudogu.com/component.name: {{ include "k8s-ces-gateway.name" . }}
+  ports:
+    - name: http
+      port: {{ .Values.controllerManager.ports.http }}
+      targetPort: http      # mappt auf containerPort .ports.http
+    - name: https
+      port: {{ .Values.controllerManager.ports.https }}
+      targetPort: https     # mappt auf containerPort .ports.https

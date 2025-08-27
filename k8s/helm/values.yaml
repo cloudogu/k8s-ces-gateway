@@ -15,6 +15,13 @@ controllerManager:
   env:
     logLevel: debug
     stage: development
+  ports:
+    http: 50123
+    https: 50124
+    webhook: 8444
+  extraArgs:
+    - --enable-ssl-passthrough=false
+    - --update-status=true
   resourceLimits:
     memory: 105M
   resourceRequests:

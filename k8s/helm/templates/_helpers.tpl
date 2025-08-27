@@ -17,6 +17,8 @@ app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 k8s.cloudogu.com/component.name: {{ include "k8s-ces-gateway.name" . }}
 k8s.cloudogu.com/component.version: {{ .Chart.AppVersion | quote }}
+{{/*this should stay until k8s-ces-setup is using the correct selector*/}}
+dogu.name: nginx-ingress
 {{- end }}
 
 {{/* Selector labels */}}

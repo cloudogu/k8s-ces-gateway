@@ -3,18 +3,15 @@ kind: Deployment
 metadata:
   name: {{ include "k8s-ces-gateway.name" . }}-controller-manager
   labels:
-    control-plane: controller-manager
   {{- include "k8s-ces-gateway.labels" . | nindent 4 }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      control-plane: controller-manager
     {{- include "k8s-ces-gateway.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        control-plane: controller-manager
       {{- include "k8s-ces-gateway.selectorLabels" . | nindent 8 }}
       annotations:
         kubectl.kubernetes.io/default-container: manager
@@ -24,21 +21,43 @@ spec:
         {{- toYaml . | nindent 8 }}
         {{- end }}
       containers:
-      - args:
-          - --health-probe-bind-address=:8081
-          - --metrics-bind-address=127.0.0.1:8080
-        name: manager
-        env:
-        - name: LOG_LEVEL
-          value: {{ quote .Values.controllerManager.env.logLevel | default "info"}}
-        image: "{{ .Values.controllerManager.image.registry }}/{{ .Values.controllerManager.image.repository }}:{{ .Values.controllerManager.image.tag }}"
-        imagePullPolicy: {{ .Values.controllerManager.imagePullPolicy }}
-        resources:
-          limits:
-          {{- toYaml .Values.controllerManager.resourceLimits | nindent 14 }}
-          requests:
-          {{- toYaml .Values.controllerManager.resourceRequests | nindent 14 }}
-        securityContext:
-          allowPrivilegeEscalation: false
+        - name: manager
+          image: "{{ .Values.controllerManager.image.registry }}/{{ .Values.controllerManager.image.repository }}:{{ .Values.controllerManager.image.tag }}"
+          env:
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: LOG_LEVEL
+            value: {{ quote .Values.controllerManager.env.logLevel | default "info"}}
+          - name: HTTP_PORT
+            value: {{ quote .Values.controllerManager.ports.http }}
+          - name: HTTPS_PORT
+            value: "{{ .Values.controllerManager.ports.https }}"
+          - name: WEBHOOK_PORT
+            value: "{{ .Values.controllerManager.ports.webhook }}"
+          - name: EXTRA_ARGS
+            value: "{{ join " " .Values.controllerManager.extraArgs }}"
+          ports:
+          - name: http
+            containerPort: {{ .Values.controllerManager.ports.http }}
+          - name: https
+            containerPort: {{ .Values.controllerManager.ports.https }}
+          - name: webhook
+            containerPort: {{ .Values.controllerManager.ports.webhook }}
+          - name: health
+            containerPort: 10254
+          imagePullPolicy: {{ .Values.controllerManager.imagePullPolicy }}
+          resources:
+            limits:
+            {{- toYaml .Values.controllerManager.resourceLimits | nindent 14 }}
+            requests:
+            {{- toYaml .Values.controllerManager.resourceRequests | nindent 14 }}
+          securityContext:
+            allowPrivilegeEscalation: false
       serviceAccountName: {{ include "k8s-ces-gateway.name" . }}-manager
       terminationGracePeriodSeconds: 10

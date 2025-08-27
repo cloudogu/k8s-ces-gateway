@@ -4,16 +4,20 @@ LABEL maintainer="hello@cloudogu.com" \
       NAME="k8s-ces-gateway" \
       VERSION="0.0.1"
 
-ENV INGRESS_USER=www-data
-
+# Wir bleiben bei root nur für Build/Copy-Schritte
 USER root
 
-# copy files
-COPY resources /
-COPY k8s /k8s
+ENV INGRESS_USER=www-data
 
-# inject custom config into template
-RUN /injectNginxConfig.sh
+# Lege deine Dateien sauber ab
+COPY resources/ /
+COPY k8s/ /k8s
+
+# Sicherstellen: ausführbar + keine CRLF + einmalige Injektion
+RUN set -eux; \
+    chmod +x /startup.sh /injectNginxConfig.sh; \
+    sed -i 's/\r$//' /startup.sh /injectNginxConfig.sh; \
+    /injectNginxConfig.sh
 
 RUN apk update && apk upgrade && apk del curl
 
@@ -28,11 +32,9 @@ VOLUME ["/etc/nginx/conf.d", "/var/log/nginx"]
 # Define working directory.
 WORKDIR /etc/nginx
 
-# HEALTHCHECK CMD doguctl healthy nginx || exit 1
-
 # Expose ports.
 EXPOSE 80
 EXPOSE 443
 
-# Define default command.
-ENTRYPOINT ["/startup.sh"]
+# Das Upstream-Image nutzt dumb-init; behalten wir bei
+ENTRYPOINT ["/usr/bin/dumb-init","--","/startup.sh"]
