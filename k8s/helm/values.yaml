@@ -48,6 +48,7 @@ ingress-nginx:
       annotations-risk-level: "Critical"
       proxy-set-headers: "ecosystem/k8s-ces-gateway-nginx-ingress-custom-headers"
       disable-access-log: "true"
+      error-log-level: "info"
 controllerManager:
   image:
     tag: 0.0.1
