@@ -1,15 +1,3 @@
-# Configmap for the general nginx-ingress-controller configuration
-# see https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/configmap/
-apiVersion: v1
-data:
-  allow-snippet-annotations: "true"
-  annotations-risk-level: "Critical"
-  proxy-set-headers: "{{ .Namespace }}/{{ include "k8s-ces-gateway.name" . }}-nginx-ingress-custom-headers"
-  disable-access-log: "{{ .Values.controllerManager.disableAccessLog }}"
-kind: ConfigMap
-metadata:
-  name: {{ include "k8s-ces-gateway.name" . }}-nginx-ingress
----
 # Configmap for adding custom headers before sending traffic to backends
 # see https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/configmap/#proxy-set-headers
 apiVersion: v1
@@ -19,3 +7,13 @@ data:
 kind: ConfigMap
 metadata:
   name: {{ include "k8s-ces-gateway.name" . }}-nginx-ingress-custom-headers
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: k8s-ces-gateway-subfilters-conf
+data:
+  subfilters.conf: |-
+{{ .Files.Get "ces-config/subfilters.conf" | indent 4 }}
+  errors.conf: |-
+{{ .Files.Get "ces-config/errors.conf" | indent 4 }}

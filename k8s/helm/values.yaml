@@ -1,30 +1,54 @@
-networkPolicies:
-  enabled: true
-global:
-  imagePullSecrets:
-    - name: "ces-container-registries"
-  networkPolicies:
-    enabled: true
-additionalImages: []
+ingress-nginx:
+  controller:
+    ingressClass: k8s-ecosystem-ces-service
+    service:
+      ports:
+        http: 80
+        https: 443
+    scope:
+      enabled: true
+      namespace: "ecosystem"
+    extraArgs:
+      controller-class: "k8s.io/nginx-ingress"
+      validating-webhook: ":8444"
+      validating-webhook-certificate: /usr/local/certificates/cert
+      validating-webhook-key: /usr/local/certificates/key
+      default-ssl-certificate: "ecosystem/ecosystem-certificate"
+      tcp-services-configmap: "ecosystem/tcp-services"
+      udp-services-configmap: "ecosystem/udp-services"
+    extraVolumes:
+      - name: nginx-template
+        emptyDir: {}
+      - name: subfilters
+        configMap:
+          name: k8s-ces-gateway-subfilters-conf
+    extraVolumeMounts:
+      - name: nginx-template
+        mountPath: /etc/nginx/template
+      - name: subfilters
+        mountPath: /etc/nginx/ces-config
+        readOnly: true
+    extraInitContainers:
+      - name: patch-nginx-template
+        image: registry.k8s.io/ingress-nginx/controller:v1.13.1
+        volumeMounts:
+          - name: nginx-template
+            mountPath: /work
+        command:
+          - /bin/sh
+          - -c
+          - |
+            set -euo pipefail
+            cp /etc/nginx/template/nginx.tmpl /work/nginx.tmpl
+            includeCesConfig='  include /etc/nginx/ces-config/*.conf;'
+            serverIncludesKey='{{ if not (empty \$server\.ServerSnippet) }}'
+            sed -i "/${serverIncludesKey}/i ${includeCesConfig}" /work/nginx.tmpl
+            cat /etc/nginx/template/nginx.tmpl
+    config:
+      allow-snippet-annotations: "true"
+      annotations-risk-level: "Critical"
+      proxy-set-headers: "ecosystem/k8s-ces-gateway-nginx-ingress-custom-headers"
+      disable-access-log: "true"
 controllerManager:
   image:
-    registry: docker.io
-    repository: cloudogu/k8s-ces-gateway
     tag: 0.0.1
-  imagePullPolicy: IfNotPresent
-  env:
-    logLevel: debug
-    stage: development
-  ports:
-    http: 50123
-    https: 50124
-    webhook: 8444
-  extraArgs:
-    - --enable-ssl-passthrough=false
-    - --update-status=true
-  resourceLimits:
-    memory: 105M
-  resourceRequests:
-    cpu: 15m
-    memory: 105M
-  disableAccessLog: true
