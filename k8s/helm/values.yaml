@@ -43,7 +43,6 @@ ingress-nginx:
             includeCesConfig='  include /etc/nginx/ces-config/*.conf;'
             serverIncludesKey='{{ if not (empty \$server\.ServerSnippet) }}'
             sed -i "/${serverIncludesKey}/i ${includeCesConfig}" /work/nginx.tmpl
-            cat /etc/nginx/template/nginx.tmpl
     config:
       allow-snippet-annotations: "true"
       annotations-risk-level: "Critical"
