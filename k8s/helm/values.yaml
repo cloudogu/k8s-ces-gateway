@@ -2,6 +2,8 @@ ingress-nginx:
   controller:
     ingressClass: k8s-ecosystem-ces-service
     service:
+      external:
+        enabled: false
       ports:
         http: 80
         https: 443
