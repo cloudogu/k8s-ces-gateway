@@ -11,7 +11,7 @@ metadata:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: k8s-ces-gateway-subfilters-conf
+  name: k8s-ces-gateway-ces-config-conf
 data:
   subfilters.conf: |-
 {{ .Files.Get "ces-config/subfilters.conf" | indent 4 }}
