@@ -12,7 +12,7 @@ ingress-nginx:
       namespace: "ecosystem"
     extraArgs:
       controller-class: "k8s.io/nginx-ingress"
-      validating-webhook: ":8444"
+      validating-webhook: ":8443"
       validating-webhook-certificate: /usr/local/certificates/cert
       validating-webhook-key: /usr/local/certificates/key
       default-ssl-certificate: "ecosystem/ecosystem-certificate"
