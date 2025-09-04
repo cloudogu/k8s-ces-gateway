@@ -1,0 +1,19 @@
+# Configmap for adding custom headers before sending traffic to backends
+# see https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/configmap/#proxy-set-headers
+apiVersion: v1
+data:
+  # Disable gzip encoding for proxy applications, so that the response can be processed by subfilters
+  Accept-Encoding: "identity"
+kind: ConfigMap
+metadata:
+  name: {{ include "k8s-ces-gateway.name" . }}-nginx-ingress-custom-headers
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: k8s-ces-gateway-ces-config-conf
+data:
+  subfilters.conf: |-
+{{ .Files.Get "ces-config/subfilters.conf" | indent 4 }}
+  errors.conf: |-
+{{ .Files.Get "ces-config/errors.conf" | indent 4 }}
