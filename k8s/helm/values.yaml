@@ -9,7 +9,7 @@ ingress-nginx:
         https: 443
     scope:
       enabled: true
-      namespace: "ecosystem"
+      namespace: "$(POD_NAMESPACE)"
     extraArgs:
       controller-class: "k8s.io/nginx-ingress"
       validating-webhook: ":8443"
@@ -51,6 +51,3 @@ ingress-nginx:
       proxy-set-headers: "ecosystem/k8s-ces-gateway-nginx-ingress-custom-headers"
       disable-access-log: "false"
       error-log-level: "info"
-controllerManager:
-  image:
-    tag: 0.0.1
