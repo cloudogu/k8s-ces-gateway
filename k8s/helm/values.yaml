@@ -45,9 +45,11 @@ ingress-nginx:
             includeCesConfig='  include /etc/nginx/ces-config/*.conf;'
             serverIncludesKey='{{ if not (empty \$server\.ServerSnippet) }}'
             sed -i "/${serverIncludesKey}/i ${includeCesConfig}" /work/nginx.tmpl
+    proxySetHeaders:
+      # Disable gzip encoding for proxy applications, so that the response can be processed by subfilters
+      Accept-Encoding: "identity"
     config:
       allow-snippet-annotations: "true"
       annotations-risk-level: "Critical"
-      proxy-set-headers: "$(POD_NAMESPACE)/k8s-ces-gateway-nginx-ingress-custom-headers"
       disable-access-log: "false"
       error-log-level: "info"
