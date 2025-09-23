@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Fixed
+- use generic Namespace name from Env-Var "POD_NAMESPACE" instead of hardcoded "ecosystem"
 
 ## [v0.0.1] - 2025-09-04
 ### Added
