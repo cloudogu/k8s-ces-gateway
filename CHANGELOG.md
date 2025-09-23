@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [v1.0.0] - 2025-09-23
 ### Fixed
 - [#4] Fix error for invalid prefix path when using regex expressions
 - use generic Namespace name from Env-Var "POD_NAMESPACE" instead of hardcoded "ecosystem"
