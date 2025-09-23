@@ -7,6 +7,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [v1.0.0] - 2025-09-23
+### Fixed
+- [#4] Fix error for invalid prefix path when using regex expressions
+- use generic Namespace name from Env-Var "POD_NAMESPACE" instead of hardcoded "ecosystem"
+
 ## [v0.0.1] - 2025-09-04
 ### Added
 - initial release of the basic k8s-ces-gateway

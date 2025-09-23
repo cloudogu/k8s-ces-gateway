@@ -15,9 +15,9 @@ ingress-nginx:
       validating-webhook: ":8443"
       validating-webhook-certificate: /usr/local/certificates/cert
       validating-webhook-key: /usr/local/certificates/key
-      default-ssl-certificate: "ecosystem/ecosystem-certificate"
-      tcp-services-configmap: "ecosystem/tcp-services"
-      udp-services-configmap: "ecosystem/udp-services"
+      default-ssl-certificate: "$(POD_NAMESPACE)/ecosystem-certificate"
+      tcp-services-configmap: "$(POD_NAMESPACE)/tcp-services"
+      udp-services-configmap: "$(POD_NAMESPACE)/udp-services"
     extraVolumes:
       - name: nginx-template
         emptyDir: {}
@@ -45,9 +45,12 @@ ingress-nginx:
             includeCesConfig='  include /etc/nginx/ces-config/*.conf;'
             serverIncludesKey='{{ if not (empty \$server\.ServerSnippet) }}'
             sed -i "/${serverIncludesKey}/i ${includeCesConfig}" /work/nginx.tmpl
+    proxySetHeaders:
+      # Disable gzip encoding for proxy applications, so that the response can be processed by subfilters
+      Accept-Encoding: "identity"
     config:
       allow-snippet-annotations: "true"
       annotations-risk-level: "Critical"
-      proxy-set-headers: "ecosystem/k8s-ces-gateway-nginx-ingress-custom-headers"
       disable-access-log: "false"
       error-log-level: "info"
+      strict-validate-path-type: "false"
