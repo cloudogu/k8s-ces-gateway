@@ -53,3 +53,4 @@ ingress-nginx:
       annotations-risk-level: "Critical"
       disable-access-log: "false"
       error-log-level: "info"
+      strict-validate-path-type: "false"
