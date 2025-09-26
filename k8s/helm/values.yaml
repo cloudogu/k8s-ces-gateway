@@ -7,6 +7,8 @@ ingress-nginx:
       ports:
         http: 80
         https: 443
+    networkPolicy:
+      enabled: true
     scope:
       enabled: true
       namespace: "$(POD_NAMESPACE)"
