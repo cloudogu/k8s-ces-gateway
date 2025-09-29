@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [v1.0.1] - 2025-09-29
+### Fixed
+- [#6] missing network-policy
+
 ## [v1.0.0] - 2025-09-23
 ### Fixed
 - [#4] Fix error for invalid prefix path when using regex expressions
