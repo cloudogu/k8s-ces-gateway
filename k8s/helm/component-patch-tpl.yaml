@@ -26,7 +26,7 @@ patches:
                 set -euo pipefail
                 cp /etc/nginx/template/nginx.tmpl /work/nginx.tmpl
                 includeCesConfig='  include /etc/nginx/ces-config/*.conf;'
-                serverIncludesKey='{{ if not (empty \$server\.ServerSnippet) }}'
+                serverIncludesKey='{{ "{{ if not (empty \$server\.ServerSnippet) }}" }}'
                 sed -i "/${serverIncludesKey}/i ${includeCesConfig}" /work/nginx.tmpl
         admissionWebhooks:
           patch:
