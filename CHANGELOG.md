@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [v1.0.2] - 2025-10-01
+### Fixed
+- [#8] component-patch-tpl to include all necessary images 
+
 ## [v1.0.1] - 2025-09-29
 ### Fixed
 - [#6] missing network-policy

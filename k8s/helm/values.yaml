@@ -1,6 +1,14 @@
+global:
+  image:
+    registry: registry.k8s.io
+
 ingress-nginx:
   controller:
     ingressClass: k8s-ecosystem-ces-service
+    image:
+      image: ingress-nginx/controller
+      tag: "v1.13.1"
+      digest: ""
     service:
       external:
         enabled: false
@@ -56,3 +64,9 @@ ingress-nginx:
       disable-access-log: "false"
       error-log-level: "info"
       strict-validate-path-type: "false"
+    admissionWebhooks:
+      patch:
+        image:
+          image: ingress-nginx/kube-webhook-certgen
+          tag: v1.6.1
+          digest: ""
