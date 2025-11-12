@@ -3,6 +3,7 @@
 target
 .bin
 
+k8s/helm/charts
 
 # Created by https://www.toptal.com/developers/gitignore/api/linux,go,intellij+all
 # Edit at https://www.toptal.com/developers/gitignore?templates=linux,go,intellij+all
