@@ -7,6 +7,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [v1.0.4] - 2025-11-13
+
 ### Changed
 - [#12] Disable the creation of the default ingress class. The ecosystem uses a different ingress class created by the service discovery.
 
