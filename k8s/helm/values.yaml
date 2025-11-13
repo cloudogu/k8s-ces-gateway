@@ -4,6 +4,8 @@ global:
 
 ingress-nginx:
   controller:
+    ingressClassResource:
+      enabled: false # Do not create the ingress class per default because the service-discovery creates one for the ces.
     ingressClass: k8s-ecosystem-ces-service
     image:
       image: ingress-nginx/controller
