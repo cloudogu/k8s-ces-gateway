@@ -7,6 +7,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+- [#12] Disable the creation of the default ingress class. The ecosystem uses a different ingress class created by the service discovery.
+
+### Added
+- [#10] documentation how to add external ingresses
+
 ## [v1.0.3] - 2025-10-01
 ### Fixed
 - templating-string in component-patch-tpl
