@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+### Changed
+- [#12] Disable the creation of the default ingress class. The ecosystem uses a different ingress class created by the service discovery.
+
 ### Added
 - [#10] documentation how to add external ingresses
 
