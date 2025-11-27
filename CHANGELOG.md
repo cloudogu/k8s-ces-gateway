@@ -7,6 +7,22 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+- [#13] k8s-ces-gateway is now responsible to apply the ingressclass `k8s-ecosystem-ces-service` required by the ecosystem.
+
+**Attention**:
+
+This change requires a manuel edit of the existing ingressclass deployed by the k8s-service-discovery.
+
+The following patch is required to add annotations and labels:
+
+`kubectl patch ingressclass k8s-ecosystem-ces-service -p '{"metadata": {"annotations": {"meta.helm.sh/release-namespace": "ecosystem", "meta.helm.sh/release-name": "k8s-ces-gateway"}, "labels": {"app.kubernetes.io/managed-by": "Helm"}}}'`
+
+This prevents the following error when installing this version of k8s-ces-gateway with an existing ingressclass:
+
+`IngressClass "k8s-ecosystem-ces-service" in namespace "" exists and cannot be imported into the current release`
+
+
 ## [v1.0.4] - 2025-11-13
 
 ### Changed
