@@ -7,6 +7,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [v2.0.0] - 2025-11-27
+
 ### Changed
 - [#13] k8s-ces-gateway is now responsible to apply the ingressclass `k8s-ecosystem-ces-service` required by the ecosystem.
 
