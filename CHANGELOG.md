@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [v2.0.1] - 2025-12-02
+### Fixed
+- [#15] Use correct controller class name `ingress-nginx`.
+
 ## [v2.0.0] - 2025-11-27
 
 ### Changed

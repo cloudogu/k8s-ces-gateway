@@ -23,7 +23,7 @@ ingress-nginx:
       enabled: true
       namespace: "$(POD_NAMESPACE)"
     extraArgs:
-      controller-class: "k8s.io/nginx-ingress"
+      controller-class: "k8s.io/ingress-nginx"
       validating-webhook: ":8443"
       validating-webhook-certificate: /usr/local/certificates/cert
       validating-webhook-key: /usr/local/certificates/key
