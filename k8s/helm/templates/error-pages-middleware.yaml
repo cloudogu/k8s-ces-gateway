@@ -1,0 +1,18 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: ces-error-pages
+spec:
+  errors:
+    status:
+      - "401"
+      - "403"
+      - "404"
+      - "408"
+      - "500"
+      - "502"
+      - "504"
+    service:
+      name: k8s-ces-assets-service
+      port: 80
+    query: "/errors/{status}.html"
