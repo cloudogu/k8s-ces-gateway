@@ -3,6 +3,8 @@ global:
     registry: registry.k8s.io
 
 ingress-nginx:
+  imagePullSecrets:
+    - name: "ces-container-registries"
   controller:
     ingressClassResource:
       name: k8s-ecosystem-ces-service
