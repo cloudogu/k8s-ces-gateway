@@ -37,14 +37,10 @@ traefik:
 
   providers:
     kubernetesIngress:
-      enabled: false
+      enabled: true
       ingressClass: k8s-ecosystem-ces-service
     kubernetesCRD:
       enabled: true
-    kubernetesIngressNginx:
-      enabled: true
-      controllerClass: "traefik.io/ingress-controller"
-      ingressClass: k8s-ecosystem-ces-service
 
   logs:
     general:
