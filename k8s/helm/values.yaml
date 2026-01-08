@@ -1,6 +1,6 @@
 traefik:
   enabled: true
-
+  installCRDs: true
   deployment:
     additionalVolumes:
       - name: rewritebody-src
