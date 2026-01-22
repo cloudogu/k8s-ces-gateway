@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [v2.1.0] - 2026-01-22
+### Added
+- [#17] Add default imagePullSecret `ces-container-registries`.
+
 ## [v2.0.1] - 2025-12-02
 ### Fixed
 - [#15] Use correct controller class name `ingress-nginx`.
