@@ -44,7 +44,7 @@ traefik:
 
   logs:
     general:
-      level: "DEBUG"  # @schema enum:[TRACE,DEBUG,INFO,WARN,ERROR,FATAL,PANIC]; default: "INFO"
+      level: "DEBUG"  # DEBUG, INFO, WARN, ERROR
     access:
       enabled: true
 
