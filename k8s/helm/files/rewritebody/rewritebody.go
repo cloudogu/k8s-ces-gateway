@@ -85,12 +85,21 @@ func (r *rewriteBody) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	// Check if response is HTML before rewriting
+	contentType := wrappedWriter.Header().Get("Content-Type")
+	if !isHTMLContent(contentType) {
+		if _, err := rw.Write(bodyBytes); err != nil {
+			log.Printf("unable to write body: %v", err)
+		}
+		return
+	}
+
 	for _, rwt := range r.rewrites {
 		bodyBytes = rwt.regex.ReplaceAll(bodyBytes, rwt.replacement)
 	}
 
 	if _, err := rw.Write(bodyBytes); err != nil {
-		log.Printf("unable to write rewrited body: %v", err)
+		log.Printf("unable to write rewritten body: %v", err)
 	}
 }
 
@@ -136,4 +145,14 @@ func (r *responseWriter) Flush() {
 	if flusher, ok := r.ResponseWriter.(http.Flusher); ok {
 		flusher.Flush()
 	}
+}
+
+// isHTMLContent checks if the content type indicates HTML
+func isHTMLContent(contentType string) bool {
+	if contentType == "" {
+		return false
+	}
+
+	// Check for text/html (with or without charset)
+	return len(contentType) >= 9 && contentType[:9] == "text/html"
 }
