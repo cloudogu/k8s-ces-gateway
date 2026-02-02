@@ -5,7 +5,7 @@ traefik:
     additionalVolumes:
       - name: rewritebody-src
         configMap:
-          name: ces-gateway-traefik-plugins
+          name: ces-gateway-traefik-plugin-rewritebody
 
     additionalVolumeMounts:
         - name: rewritebody-src
@@ -39,8 +39,10 @@ traefik:
     kubernetesIngress:
       enabled: true
       ingressClass: k8s-ecosystem-ces-service
+      namespaces: []
     kubernetesCRD:
       enabled: true
+      namespaces: []
 
   logs:
     general:
