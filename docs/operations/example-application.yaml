@@ -66,16 +66,16 @@ spec:
   tls:
     # TLS certificates for the hosts you want to add rules for
     - hosts:
-        - foo.bar.invalid
+        - "34.179.143.69.nip.io"
       # This secret must exist beforehand
       # The cert must also contain the subj-name foo.bar.invalid
-      secretName: foobar
+      secretName: foo.tls
   rules:
     # Rules for the services we want to redirect our traffic to
-    - host: foo.bar.invalid
+    - host: "34.179.143.69.nip.io"
       http:
         paths:
-          - path: /
+          - path: /test
             pathType: Prefix
             backend:
               service:
