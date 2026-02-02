@@ -1,76 +1,68 @@
-global:
-  image:
-    registry: registry.k8s.io
-
-ingress-nginx:
-  imagePullSecrets:
-    - name: "ces-container-registries"
-  controller:
-    ingressClassResource:
-      name: k8s-ecosystem-ces-service
-    ingressClass: k8s-ecosystem-ces-service
-    image:
-      image: ingress-nginx/controller
-      tag: "v1.13.1"
-      digest: ""
-    service:
-      external:
-        enabled: false
-      ports:
-        http: 80
-        https: 443
-    networkPolicy:
-      enabled: true
-    scope:
-      enabled: true
-      namespace: "$(POD_NAMESPACE)"
-    extraArgs:
-      controller-class: "k8s.io/ingress-nginx"
-      validating-webhook: ":8443"
-      validating-webhook-certificate: /usr/local/certificates/cert
-      validating-webhook-key: /usr/local/certificates/key
-      default-ssl-certificate: "$(POD_NAMESPACE)/ecosystem-certificate"
-      tcp-services-configmap: "$(POD_NAMESPACE)/tcp-services"
-      udp-services-configmap: "$(POD_NAMESPACE)/udp-services"
-    extraVolumes:
-      - name: nginx-template
-        emptyDir: {}
-      - name: ces-config
+traefik:
+  enabled: true
+  installCRDs: true
+  deployment:
+    additionalVolumes:
+      - name: rewritebody-src
         configMap:
-          name: k8s-ces-gateway-ces-config-conf
-    extraVolumeMounts:
-      - name: nginx-template
-        mountPath: /etc/nginx/template
-      - name: ces-config
-        mountPath: /etc/nginx/ces-config
-        readOnly: true
-    extraInitContainers:
-      - name: patch-nginx-template
-        image: registry.k8s.io/ingress-nginx/controller:v1.13.1
-        volumeMounts:
-          - name: nginx-template
-            mountPath: /work
-        command:
-          - /bin/sh
-          - -c
-          - |
-            set -euo pipefail
-            cp /etc/nginx/template/nginx.tmpl /work/nginx.tmpl
-            includeCesConfig='  include /etc/nginx/ces-config/*.conf;'
-            serverIncludesKey='{{ if not (empty \$server\.ServerSnippet) }}'
-            sed -i "/${serverIncludesKey}/i ${includeCesConfig}" /work/nginx.tmpl
-    proxySetHeaders:
-      # Disable gzip encoding for proxy applications, so that the response can be processed by subfilters
-      Accept-Encoding: "identity"
-    config:
-      allow-snippet-annotations: "true"
-      annotations-risk-level: "Critical"
-      disable-access-log: "false"
-      error-log-level: "info"
-      strict-validate-path-type: "false"
-    admissionWebhooks:
-      patch:
-        image:
-          image: ingress-nginx/kube-webhook-certgen
-          tag: v1.6.1
-          digest: ""
+          name: ces-gateway-traefik-plugins
+
+    additionalVolumeMounts:
+        - name: rewritebody-src
+          mountPath: /plugins-local/src/github.com/traefik/plugin-rewritebody
+          readOnly: true
+
+  experimental:
+    localPlugins:
+      rewritebody:
+        moduleName: github.com/traefik/plugin-rewritebody
+        mountPath: /plugins-local/src/github.com/traefik/plugin-rewritebody
+        type: localPath
+        volumeName: rewritebody-src
+
+  image:
+    registry: docker.io
+    repository: traefik
+    tag:  v3.6.2
+    pullPolicy: IfNotPresent
+
+  ingressClass:
+    enabled: true
+    isDefaultClass: true
+    name: "k8s-ecosystem-ces-service"
+
+  ingressRoute:
+    dashboard:
+      enabled: true
+
+  providers:
+    kubernetesIngress:
+      enabled: true
+      ingressClass: k8s-ecosystem-ces-service
+    kubernetesCRD:
+      enabled: true
+
+  logs:
+    general:
+      level: "DEBUG"  # @schema enum:[TRACE,DEBUG,INFO,WARN,ERROR,FATAL,PANIC]; default: "INFO"
+    access:
+      enabled: true
+
+  ports:
+    web:
+      port: 80
+      exposedPort: 80
+    websecure:
+      port: 443
+      exposedPort: 443
+      middlewares:
+        - ecosystem-ces-chain@kubernetescrd
+        - ecosystem-ces-error-pages@kubernetescrd
+
+  service:
+    enabled: false
+
+  tlsStore:
+    default:
+      defaultCertificate:
+        secretName: ecosystem-certificate
