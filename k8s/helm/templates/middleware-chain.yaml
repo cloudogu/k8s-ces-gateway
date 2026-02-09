@@ -1,0 +1,10 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: ces-chain
+spec:
+  chain:
+    middlewares:
+      - name: ces-accept-encoding-identity
+      - name: ces-rewrite
+      - name: ces-compress
