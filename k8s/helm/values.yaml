@@ -6,10 +6,16 @@ traefik:
       - name: rewritebody-src
         configMap:
           name: ces-gateway-traefik-plugin-rewritebody
+      - name: ces-error-pages-src
+        configMap:
+          name: ces-gateway-traefik-plugin-ces-error-pages
 
     additionalVolumeMounts:
         - name: rewritebody-src
           mountPath: /plugins-local/src/github.com/traefik/plugin-rewritebody
+          readOnly: true
+        - name: ces-error-pages-src
+          mountPath: /plugins-local/src/github.com/traefik/plugin-ces-error-pages
           readOnly: true
 
   experimental:
@@ -19,6 +25,11 @@ traefik:
         mountPath: /plugins-local/src/github.com/traefik/plugin-rewritebody
         type: localPath
         volumeName: rewritebody-src
+      ces-error-pages:
+        moduleName: github.com/traefik/plugin-ces-error-pages
+        mountPath: /plugins-local/src/github.com/traefik/plugin-ces-error-pages
+        type: localPath
+        volumeName: ces-error-pages-src
 
   image:
     registry: docker.io
@@ -59,8 +70,7 @@ traefik:
       exposedPort: 443
       middlewares:
         - ecosystem-ces-chain@kubernetescrd
-        - ecosystem-ces-error-pages@kubernetescrd
-
+        - ecosystem-ces-error@kubernetescrd
   service:
     enabled: false
 

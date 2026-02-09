@@ -1,0 +1,14 @@
+displayName: ces-error-pages
+type: middleware
+import: github.com/traefik/plugin-ces-error-pages
+
+summary: Redirects to error pages only when response body is empty and content type is HTML
+
+testData:
+  errorPageService:
+    name: k8s-ces-assets-service
+    port: 80
+  errorPagePath: /errors/{status}.html
+  statusCodes:
+    - 404
+    - 500
