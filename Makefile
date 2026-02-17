@@ -3,6 +3,8 @@ ARTIFACT_ID=k8s-ces-gateway
 VERSION=2.1.0
 
 MAKEFILES_VERSION=10.6.0
+GOTAG=1.26.0
+LINT_VERSION?=v2.9.0
 
 include build/make/variables.mk
 include build/make/self-update.mk
