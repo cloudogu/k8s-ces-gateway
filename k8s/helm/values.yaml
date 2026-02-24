@@ -71,6 +71,15 @@ traefik:
       middlewares:
         - ecosystem-ces-chain@kubernetescrd
         - ecosystem-ces-error@kubernetescrd
+    # open static ports for exposed ports in dogus until traefik can load these ports dynamically
+    # scm
+    tcp-2222:
+      port: 2222
+      protocol: TCP
+    ## jenkins
+    tcp-50000:
+      port: 50000
+      protocol: TCP
   service:
     enabled: false
 
