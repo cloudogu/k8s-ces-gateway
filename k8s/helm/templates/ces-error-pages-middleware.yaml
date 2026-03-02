@@ -1,0 +1,19 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: ces-error
+  namespace: {{ .Release.Namespace }}
+spec:
+  plugin:
+    ces-error-pages:
+      errorPageService: "k8s-ces-assets-service"
+      errorPagePort: 80
+      errorPagePath: "/errors/{status}.html"
+      statusCodes:
+        - 401
+        - 403
+        - 404
+        - 408
+        - 500
+        - 502
+        - 504

@@ -30,12 +30,13 @@ spec:
   name: k8s-ces-gateway
   namespace: k8s
   valuesYamlOverwrite: |
-    ingress-nginx:
-      controller:
-        scope:
-          enabled: false
-          namespaceSelector: ""
-  version: 1.0.3
+    traefik:
+      providers:
+        kubernetesIngress:
+          namespaces: []        
+        kubernetesCRD:
+          namespaces: []
+  version: 3.0.0
 ```
 
 `namespaceSelector` allows us to only watch namespaces with specific labels. The format is `foo=bar`.

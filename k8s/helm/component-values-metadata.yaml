@@ -5,9 +5,9 @@ metavalues:
     name: Log-Level
     description: The central configuration value to set the log level for this component
     keys:
-      - path: ingress-nginx.controller.config.error-log-level
+      - path: traefik.controller.logs.general.level
         mapping:
-          debug: debug
-          info: info
-          warn: warn
-          error: error
+          debug: DEBUG
+          info: INFO
+          warn: WARN
+          error: ERROR

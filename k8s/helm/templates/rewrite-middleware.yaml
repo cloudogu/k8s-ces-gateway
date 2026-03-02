@@ -1,0 +1,13 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: ces-rewrite
+spec:
+  plugin:
+    rewritebody:
+      lastModified: true
+      rewrites:
+        - regex: "</body>"
+          replacement: "<script type=\"text/javascript\" src=\"/warp/add-warp-menu.js\"></script></body>"
+        - regex: "</head>"
+          replacement: "<script type=\"text/javascript\" src=\"/whitelabeljs/add-whitelabeling.js\"></script><link rel=\"stylesheet\" type=\"text/css\" href=\"/styles/default.css\"><link rel=\"stylesheet\" type=\"text/css\" href=\"/whitelabeling/main.css\"></head>"

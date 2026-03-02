@@ -7,6 +7,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [v3.0.0] - 2026-03-02
+### Changed
+- [#19] k8s-ces-gateway now uses traefik instead of ingress-nginx
+  - all functionalities remain the same
+  - added documentation for traefik configuration
+
 ## [v2.1.0] - 2026-01-22
 ### Added
 - [#17] Add default imagePullSecret `ces-container-registries`.
