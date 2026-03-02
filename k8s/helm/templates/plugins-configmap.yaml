@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ces-gateway-traefik-plugin-rewritebody
+data:
+{{- $files := .Files.Glob "files/rewritebody/**" -}}
+{{- range $path, $file := $files }}
+  {{ $path | base | quote }}: |-
+{{ $file | toString | indent 4 }}
+{{- end }}

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ces-gateway-traefik-plugin-ces-error-pages
+  namespace: {{ .Release.Namespace }}
+data:
+{{- $files := .Files.Glob "files/ces-error-pages/**" -}}
+{{- range $path, $file := $files }}
+  {{ $path | base | quote }}: |-
+{{ $file | toString | indent 4 }}
+{{- end }}
