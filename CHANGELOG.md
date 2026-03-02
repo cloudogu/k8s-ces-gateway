@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [v3.0.0] - 2026-03-02
 ### Changed
 - [#19] k8s-ces-gateway now uses traefik instead of ingress-nginx
   - all functionalities remain the same
