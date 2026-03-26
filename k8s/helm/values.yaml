@@ -1,3 +1,17 @@
+networkPolicy:
+  enabled: true
+  policyTypes:
+    - Ingress
+  podSelector:
+    matchLabels:
+      k8s.cloudogu.com/component.name: k8s-ces-gateway
+  ingress:
+    - ports:
+        - port: 80
+          protocol: TCP
+        - port: 443
+          protocol: TCP
+
 traefik:
   enabled: true
   installCRDs: true
