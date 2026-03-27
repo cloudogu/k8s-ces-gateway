@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [v3.0.1] - 2026-03-27
+### Fixed
+- [#23] Add networkpolicy and fix external access
+
 ## [v3.0.0] - 2026-03-02
 ### Changed
 - [#19] k8s-ces-gateway now uses traefik instead of ingress-nginx
