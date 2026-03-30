@@ -16,6 +16,8 @@ traefik:
   enabled: true
   installCRDs: true
   deployment:
+    imagePullSecrets:
+      - name: ces-container-registries
     additionalVolumes:
       - name: rewritebody-src
         configMap:
