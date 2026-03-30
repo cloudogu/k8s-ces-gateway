@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [v3.0.2] - 2026-03-30
+### Changed
+- [#25] Update traefik to 3.6.12 to fix CVEs
+
 ## [v3.0.1] - 2026-03-27
 ### Fixed
 - [#23] Add networkpolicy and fix external access

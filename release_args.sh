@@ -10,6 +10,15 @@ cesGatewayValues="k8s/helm/values.yaml"
 update_versions_modify_files() {
   echo "Update helm dependencies"
   make helm-update-dependencies  > /dev/null
+
+  local traefikRegistry
+  local traefikRepo
+  local traefikTag
+  traefikRegistry=$(.bin/yq '.traefik.image.registry' < "${cesGatewayValues}")
+  traefikRepo=$(.bin/yq '.traefik.image.repository' < "${cesGatewayValues}")
+  traefikTag=$(.bin/yq '.traefik.image.tag' < "${cesGatewayValues}")
+
+  setAttributeInComponentPatchTemplate ".values.images.traefik" "${traefikRegistry}/${traefikRepo}:${traefikTag}"
 }
 
 setAttributeInComponentPatchTemplate() {
