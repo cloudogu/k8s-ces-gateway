@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [v3.0.2] - 2026-03-30
 ### Changed
 - [#25] Update traefik to 3.6.12 to fix CVEs
 
