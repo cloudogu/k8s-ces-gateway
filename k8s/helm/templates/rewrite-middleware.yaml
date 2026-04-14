@@ -6,6 +6,7 @@ spec:
   plugin:
     rewritebody:
       lastModified: true
+      useNonce: true
       rewrites:
         - regex: "</body>"
           replacement: "<script type=\"text/javascript\" src=\"/warp/add-warp-menu.js\"></script></body>"

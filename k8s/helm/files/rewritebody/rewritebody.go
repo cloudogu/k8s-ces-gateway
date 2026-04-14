@@ -5,11 +5,14 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
 	"log"
 	"net"
 	"net/http"
 	"regexp"
+	"strings"
 )
 
 // Rewrite holds one rewrite body configuration.
@@ -22,6 +25,7 @@ type Rewrite struct {
 type Config struct {
 	LastModified bool      `json:"lastModified,omitempty"`
 	Rewrites     []Rewrite `json:"rewrites,omitempty"`
+	UseNonce     bool      `json:"useNonce,omitempty"`
 }
 
 // CreateConfig creates and initializes the plugin configuration.
@@ -39,6 +43,21 @@ type rewriteBody struct {
 	next         http.Handler
 	rewrites     []rewrite
 	lastModified bool
+	useNonce     bool
+	nonce        string
+}
+
+type responseWriter struct {
+	buffer       bytes.Buffer
+	lastModified bool
+	wroteHeader  bool
+	statusCode   int
+
+	header   http.Header
+	nonce    string
+	useNonce bool
+
+	http.ResponseWriter
 }
 
 // New creates and returns a new rewrite body plugin instance.
@@ -57,11 +76,18 @@ func New(_ context.Context, next http.Handler, config *Config, name string) (htt
 		}
 	}
 
+	var nonce string
+	if config.UseNonce {
+		nonce = generateNonce()
+	}
+
 	return &rewriteBody{
 		name:         name,
 		next:         next,
 		rewrites:     rewrites,
 		lastModified: config.LastModified,
+		useNonce:     config.UseNonce,
+		nonce:        nonce,
 	}, nil
 }
 
@@ -69,6 +95,9 @@ func (r *rewriteBody) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	wrappedWriter := &responseWriter{
 		lastModified:   r.lastModified,
 		ResponseWriter: rw,
+		header:         cloneHeader(rw.Header()),
+		nonce:          r.nonce,
+		useNonce:       r.useNonce,
 	}
 
 	r.next.ServeHTTP(wrappedWriter, req)
@@ -76,52 +105,100 @@ func (r *rewriteBody) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	bodyBytes := wrappedWriter.buffer.Bytes()
 
 	contentEncoding := wrappedWriter.Header().Get("Content-Encoding")
-
 	if contentEncoding != "" && contentEncoding != "identity" {
-		if _, err := rw.Write(bodyBytes); err != nil {
-			log.Printf("unable to write body: %v", err)
-		}
-
+		wrappedWriter.commitTo(rw, bodyBytes)
 		return
 	}
 
 	// Check if response is HTML before rewriting
 	contentType := wrappedWriter.Header().Get("Content-Type")
 	if !isHTMLContent(contentType) {
-		if _, err := rw.Write(bodyBytes); err != nil {
-			log.Printf("unable to write body: %v", err)
-		}
+		wrappedWriter.commitTo(rw, bodyBytes)
 		return
 	}
 
 	for _, rwt := range r.rewrites {
-		bodyBytes = rwt.regex.ReplaceAll(bodyBytes, rwt.replacement)
+		replacement := rwt.replacement
+		bodyBytes = rwt.regex.ReplaceAll(bodyBytes, replacement)
 	}
 
-	if _, err := rw.Write(bodyBytes); err != nil {
-		log.Printf("unable to write rewritten body: %v", err)
+	// Update CSP header with nonce if enabled and add nonce to all script tags
+	if r.useNonce {
+		wrappedWriter.updateCSPWithNonce()
+		bodyBytes = wrappedWriter.addNonceToScriptTags(bodyBytes)
 	}
+
+	wrappedWriter.commitTo(rw, bodyBytes)
 }
 
-type responseWriter struct {
-	buffer       bytes.Buffer
-	lastModified bool
-	wroteHeader  bool
+// generateNonce creates a cryptographically secure random nonce
+func generateNonce() string {
+	b := make([]byte, 16) // 128 bit
+	if _, err := rand.Read(b); err != nil {
+		log.Printf("failed to generate nonce: %v", err)
+		return ""
+	}
+	return base64.StdEncoding.EncodeToString(b)
+}
 
-	http.ResponseWriter
+// updateCSPWithNonce adds the nonce to existing CSP header
+func (r *responseWriter) updateCSPWithNonce() {
+	header := r.Header()
+	csp := header.Get("Content-Security-Policy")
+	if csp == "" {
+		// there should be a csp header
+		return
+	}
+
+	nonceValue := fmt.Sprintf("'nonce-%s'", r.nonce)
+	updatedCSP := strings.Replace(csp, "script-src ", "script-src "+nonceValue+" ", 1)
+
+	header.Set("Content-Security-Policy", updatedCSP)
+}
+
+// addNonceToScriptTags adds nonce attribute to all <script> tags that don't already have one
+func (r *responseWriter) addNonceToScriptTags(body []byte) []byte {
+	scriptRegex := regexp.MustCompile(`<script(\s+[^>]*)?>`)
+
+	result := scriptRegex.ReplaceAllFunc(body, func(match []byte) []byte {
+		matchStr := string(match)
+
+		if strings.Contains(matchStr, "nonce=") {
+			return match
+		}
+
+		// Add nonce before the closing > of the script tag
+		if strings.HasSuffix(matchStr, ">") {
+			return []byte(strings.TrimSuffix(matchStr, ">") + fmt.Sprintf(` nonce="%s">`, r.nonce))
+		}
+
+		return match
+	})
+
+	return result
+}
+
+func (r *responseWriter) Header() http.Header {
+	if r.header == nil {
+		r.header = make(http.Header)
+	}
+	return r.header
 }
 
 func (r *responseWriter) WriteHeader(statusCode int) {
+	if r.wroteHeader {
+		return
+	}
+
 	if !r.lastModified {
-		r.ResponseWriter.Header().Del("Last-Modified")
+		r.Header().Del("Last-Modified")
 	}
 
 	r.wroteHeader = true
+	r.statusCode = statusCode
 
 	// Delegates the Content-Length Header creation to the final body write.
-	r.ResponseWriter.Header().Del("Content-Length")
-
-	r.ResponseWriter.WriteHeader(statusCode)
+	r.Header().Del("Content-Length")
 }
 
 func (r *responseWriter) Write(p []byte) (int, error) {
@@ -130,6 +207,42 @@ func (r *responseWriter) Write(p []byte) (int, error) {
 	}
 
 	return r.buffer.Write(p)
+}
+
+func (r *responseWriter) commitTo(rw http.ResponseWriter, body []byte) {
+	status := r.statusCode
+	if status == 0 {
+		status = http.StatusOK
+	}
+
+	r.Header().Del("Content-Length")
+	applyHeader(rw.Header(), r.Header())
+	rw.WriteHeader(status)
+
+	if _, err := rw.Write(body); err != nil {
+		log.Printf("unable to write body: %v", err)
+	}
+}
+
+func cloneHeader(src http.Header) http.Header {
+	dst := make(http.Header, len(src))
+	for k, vv := range src {
+		cpy := make([]string, len(vv))
+		copy(cpy, vv)
+		dst[k] = cpy
+	}
+	return dst
+}
+
+func applyHeader(dst, src http.Header) {
+	for k := range dst {
+		dst.Del(k)
+	}
+	for k, vv := range src {
+		for _, v := range vv {
+			dst.Add(k, v)
+		}
+	}
 }
 
 func (r *responseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
