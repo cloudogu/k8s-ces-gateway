@@ -163,13 +163,12 @@ func (r *responseWriter) addNonceToScriptTags(body []byte) []byte {
 	result := scriptRegex.ReplaceAllFunc(body, func(match []byte) []byte {
 		matchStr := string(match)
 
-		if strings.Contains(matchStr, "nonce=") {
-			return match
-		}
+		// Remove existing nonce attribute if present
+		nonceAttrRegex := regexp.MustCompile(`\s+nonce="[^"]*"`)
+		matchStr = nonceAttrRegex.ReplaceAllString(matchStr, "")
 
-		// Add nonce before the closing > of the script tag
 		if strings.HasSuffix(matchStr, ">") {
-			return []byte(strings.TrimSuffix(matchStr, ">") + fmt.Sprintf(` nonce="%s">`, r.nonce))
+			return []byte(fmt.Sprintf(`<script nonce="%s"%s`, r.nonce, strings.TrimPrefix(matchStr, "<script")))
 		}
 
 		return match
