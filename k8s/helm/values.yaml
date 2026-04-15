@@ -25,6 +25,9 @@ traefik:
       - name: ces-error-pages-src
         configMap:
           name: ces-gateway-traefik-plugin-ces-error-pages
+      - name: nonce-src
+        configMap:
+          name: ces-gateway-traefik-plugin-nonce
 
     additionalVolumeMounts:
         - name: rewritebody-src
@@ -32,6 +35,9 @@ traefik:
           readOnly: true
         - name: ces-error-pages-src
           mountPath: /plugins-local/src/github.com/traefik/plugin-ces-error-pages
+          readOnly: true
+        - name: nonce-src
+          mountPath: /plugins-local/src/github.com/traefik/plugin-nonce
           readOnly: true
 
   experimental:
@@ -46,6 +52,11 @@ traefik:
         mountPath: /plugins-local/src/github.com/traefik/plugin-ces-error-pages
         type: localPath
         volumeName: ces-error-pages-src
+      nonce:
+        moduleName: github.com/traefik/plugin-nonce
+        mountPath: /plugins-local/src/github.com/traefik/plugin-nonce
+        type: localPath
+        volumeName: nonce-src
 
   image:
     registry: docker.io

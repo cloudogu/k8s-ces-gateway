@@ -8,3 +8,14 @@ data:
   {{ $path | base | quote }}: |-
 {{ $file | toString | indent 4 }}
 {{- end }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ces-gateway-traefik-plugin-nonce
+data:
+{{- $files := .Files.Glob "files/nonce/**" -}}
+{{- range $path, $file := $files }}
+  {{ $path | base | quote }}: |-
+{{ $file | toString | indent 4 }}
+{{- end }}
