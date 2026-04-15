@@ -5,11 +5,11 @@ metadata:
 spec:
   headers:
     customResponseHeaders:
-      # style-src needs to be 'unsafe-inline' to allow html style attributes
+      # style-src needs to be 'unsafe-inline' to allow html style attributes. Eventuell style-src komplett rausnehmen?
       Content-Security-Policy: >-
         default-src 'self';
-        script-src 'self';
-        style-src 'self' 'unsafe-inline';
+        script-src 'self' 'unsafe-eval';
+        style-src * 'unsafe-inline';
         img-src 'self' data: blob:;
         font-src 'self' data:;
         connect-src 'self';
