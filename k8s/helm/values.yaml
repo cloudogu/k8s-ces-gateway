@@ -114,11 +114,3 @@ traefik:
     default:
       defaultCertificate:
         secretName: ecosystem-certificate
-
-  tls:
-    options:
-      default:
-        minVersion: VersionTLS13
-        cipherSuites:
-          - TLS_AES_128_GCM_SHA256
-          - TLS_AES_256_GCM_SHA384
