@@ -9,7 +9,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Security
 - [#27] Only support TLSv1.3
 - [#27] Inject additional security headers into every request
-- [#27] use nonces to prevent malicious inlince script execution
+- [#27] use nonces to prevent malicious inline script execution
 
 ## [v3.0.3] - 2026-03-30
 ### Fixed
