@@ -62,9 +62,12 @@ node('docker') {
                         k3d.kubectl("wait --for=condition=ready pod -l app.kubernetes.io/instance=k8s-ces-gateway-default --timeout=300s")
 			// Make sure that TLS v1.2 is disabled and TLS v1.3 is available
 			sh '''
-			# only gets the first serverlb container name, if there are multiple running
+			# Get Traefik service LoadBalancer IP and port (websecure port 443)
 			container_name=$(docker ps --filter "name=k3d-citest-.*-serverlb" --format "{{.Names}}")
-			ip_and_port=$(docker port $container_name 6443)
+			ip_and_port=$(docker port $container_name 443)
+
+			echo "Testing Traefik TLS configuration on $ip_and_port"
+
 			# Check for TLS v1.2 not being available
 			openssl s_client -connect $ip_and_port -tls1_2 -brief >/dev/null 2>&1
 			TLS1_2_available=$?
@@ -72,6 +75,7 @@ node('docker') {
 			  echo "ERROR: TLS 1.2 is available, but it should be disabled!"
 			  exit 1
 			fi
+
 			# Check for TLS v1.3 being available
 			openssl s_client -connect $ip_and_port -tls1_3 -brief >/dev/null 2>&1
 			TLS1_3_available=$?
@@ -79,6 +83,8 @@ node('docker') {
 			  echo "ERROR: TLS 1.3 is NOT available!"
 			  exit 1
 			fi
+
+			echo "TLS configuration is correct: TLS 1.2 disabled, TLS 1.3 enabled"
 			'''
                     }
                 } catch(Exception e) {
