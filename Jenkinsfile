@@ -62,29 +62,37 @@ node('docker') {
                         k3d.kubectl("wait --for=condition=ready pod -l app.kubernetes.io/instance=k8s-ces-gateway-default --timeout=300s")
 			// Make sure that TLS v1.2 is disabled and TLS v1.3 is available
 			sh '''
-			# Get Traefik service LoadBalancer IP and port (websecure port 443)
-			container_name=$(docker ps --filter "name=k3d-citest-.*-serverlb" --format "{{.Names}}")
-			ip_and_port=$(docker port $container_name 443)
+			# Port-forward Traefik service to localhost
+			kubectl port-forward -n default svc/k8s-ces-gateway-traefik 8443:443 &
+			PF_PID=$!
 
-			echo "Testing Traefik TLS configuration on $ip_and_port"
+			# Wait for port-forward to be ready
+			sleep 3
+
+			echo "Testing Traefik TLS configuration on localhost:8443"
 
 			# Check for TLS v1.2 not being available
-			openssl s_client -connect $ip_and_port -tls1_2 -brief >/dev/null 2>&1
+			openssl s_client -connect localhost:8443 -tls1_2 -brief >/dev/null 2>&1
 			TLS1_2_available=$?
 			if [ "$TLS1_2_available" -eq 0 ]; then
 			  echo "ERROR: TLS 1.2 is available, but it should be disabled!"
+			  kill $PF_PID
 			  exit 1
 			fi
 
 			# Check for TLS v1.3 being available
-			openssl s_client -connect $ip_and_port -tls1_3 -brief >/dev/null 2>&1
+			openssl s_client -connect localhost:8443 -tls1_3 -brief >/dev/null 2>&1
 			TLS1_3_available=$?
 			if [ "$TLS1_3_available" -ne 0 ]; then
 			  echo "ERROR: TLS 1.3 is NOT available!"
+			  kill $PF_PID
 			  exit 1
 			fi
 
 			echo "TLS configuration is correct: TLS 1.2 disabled, TLS 1.3 enabled"
+
+			# Cleanup port-forward
+			kill $PF_PID
 			'''
                     }
                 } catch(Exception e) {
