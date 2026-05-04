@@ -5,7 +5,6 @@ metadata:
 spec:
   headers:
     customResponseHeaders:
-      # style-src needs to be 'unsafe-inline' to allow html style attributes. Eventuell style-src komplett rausnehmen?
       Content-Security-Policy: >-
         default-src 'self';
         script-src 'self' 'unsafe-eval';
