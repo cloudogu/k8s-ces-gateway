@@ -25,7 +25,7 @@ setAttributeInComponentPatchTemplate() {
   local key="${1}"
   local value="${2}"
 
-  yq -i "${key} = \"${value}\"" "${componentTemplateFile}"
+  .bin/yq -i "${key} = \"${value}\"" "${componentTemplateFile}"
 }
 
 update_versions_stage_modified_files() {
