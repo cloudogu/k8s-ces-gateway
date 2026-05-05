@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [v3.1.0] - 2026-05-05
+### Added 
+- [#28] add configmap to configure exposed ports
+
 ## [v3.0.3] - 2026-03-30
 ### Fixed
 - Add imagePullSecret to fix image pull error
