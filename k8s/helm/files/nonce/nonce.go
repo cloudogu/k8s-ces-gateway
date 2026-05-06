@@ -1,28 +1,22 @@
-// Package plugin_rewritebody a plugin to rewrite response body.
-package plugin_rewritebody
+// Package plugin_nonce adds nonces to inline script tags
+package plugin_nonce
 
 import (
 	"bufio"
 	"bytes"
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
 	"log"
 	"net"
 	"net/http"
 	"regexp"
+	"strings"
 )
-
-// Rewrite holds one rewrite body configuration.
-type Rewrite struct {
-	Regex       string `json:"regex,omitempty"`
-	Replacement string `json:"replacement,omitempty"`
-}
 
 // Config holds the plugin configuration.
 type Config struct {
-	LastModified bool      `json:"lastModified,omitempty"`
-	Rewrites     []Rewrite `json:"rewrites,omitempty"`
-	UseNonce     bool      `json:"useNonce,omitempty"`
 }
 
 // CreateConfig creates and initializes the plugin configuration.
@@ -30,61 +24,35 @@ func CreateConfig() *Config {
 	return &Config{}
 }
 
-type rewrite struct {
-	regex       *regexp.Regexp
-	replacement []byte
-}
-
-type rewriteBody struct {
-	name         string
-	next         http.Handler
-	rewrites     []rewrite
-	lastModified bool
+type nonce struct {
+	next http.Handler
 }
 
 type responseWriter struct {
-	buffer       bytes.Buffer
-	lastModified bool
-	wroteHeader  bool
-	statusCode   int
+	buffer      bytes.Buffer
+	wroteHeader bool
+	nonce       string
+	statusCode  int
 
 	header http.Header
 	http.ResponseWriter
 }
 
-// New creates and returns a new rewrite body plugin instance.
-func New(_ context.Context, next http.Handler, config *Config, name string) (http.Handler, error) {
-	rewrites := make([]rewrite, len(config.Rewrites))
-
-	for i, rewriteConfig := range config.Rewrites {
-		regex, err := regexp.Compile(rewriteConfig.Regex)
-		if err != nil {
-			return nil, fmt.Errorf("error compiling regex %q: %w", rewriteConfig.Regex, err)
-		}
-
-		rewrites[i] = rewrite{
-			regex:       regex,
-			replacement: []byte(rewriteConfig.Replacement),
-		}
-	}
-
-	return &rewriteBody{
-		name:         name,
-		next:         next,
-		rewrites:     rewrites,
-		lastModified: config.LastModified,
+// New creates and returns a new nonce plugin instance.
+func New(_ context.Context, next http.Handler, _ *Config, name string) (http.Handler, error) {
+	return &nonce{
+		next: next,
 	}, nil
 }
 
-func (r *rewriteBody) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+func (n *nonce) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	wrappedWriter := &responseWriter{
-		lastModified:   r.lastModified,
 		ResponseWriter: rw,
+		nonce:          generateNonce(),
 		header:         cloneHeader(rw.Header()),
 	}
 
-	r.next.ServeHTTP(wrappedWriter, req)
-
+	n.next.ServeHTTP(wrappedWriter, req)
 	bodyBytes := wrappedWriter.buffer.Bytes()
 
 	contentEncoding := wrappedWriter.Header().Get("Content-Encoding")
@@ -93,35 +61,66 @@ func (r *rewriteBody) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// Check if response is HTML before rewriting
+	// Check if response is HTML before adding nonces
 	contentType := wrappedWriter.Header().Get("Content-Type")
 	if !isHTMLContent(contentType) {
 		wrappedWriter.commitTo(rw, bodyBytes)
 		return
 	}
 
-	for _, rwt := range r.rewrites {
-		replacement := rwt.replacement
-		bodyBytes = rwt.regex.ReplaceAll(bodyBytes, replacement)
-	}
+	bodyBytes = wrappedWriter.addNonceToScriptTags(bodyBytes)
+	wrappedWriter.updateCSPWithNonce()
 
 	wrappedWriter.commitTo(rw, bodyBytes)
 }
 
-func (r *responseWriter) Header() http.Header {
-	if r.header == nil {
-		r.header = make(http.Header)
+// generateNonce creates a cryptographically secure random nonce
+func generateNonce() string {
+	b := make([]byte, 16) // 128 bit
+	// rand.Read cannot throw an error per specification
+	rand.Read(b)
+	return base64.StdEncoding.EncodeToString(b)
+}
+
+// updateCSPWithNonce adds the nonce to existing CSP header
+func (r *responseWriter) updateCSPWithNonce() {
+	header := r.Header()
+	csp := header.Get("Content-Security-Policy")
+	if csp == "" {
+		// there should be a csp header
+		return
 	}
-	return r.header
+
+	nonceValue := fmt.Sprintf("'nonce-%s'", r.nonce)
+	updatedCSP := strings.Replace(csp, "script-src ", "script-src "+nonceValue+" ", 1)
+
+	header.Set("Content-Security-Policy", updatedCSP)
+}
+
+// addNonceToScriptTags adds nonce attribute to all <script> tags that don't already have one
+func (r *responseWriter) addNonceToScriptTags(body []byte) []byte {
+	scriptRegex := regexp.MustCompile(`<script(\s+[^>]*)?>`)
+
+	result := scriptRegex.ReplaceAllFunc(body, func(match []byte) []byte {
+		matchStr := string(match)
+
+		// Remove existing nonce attribute if present
+		nonceAttrRegex := regexp.MustCompile(`\s+nonce="[^"]*"`)
+		matchStr = nonceAttrRegex.ReplaceAllString(matchStr, "")
+
+		if strings.HasSuffix(matchStr, ">") {
+			return []byte(fmt.Sprintf(`<script nonce="%s"%s`, r.nonce, strings.TrimPrefix(matchStr, "<script")))
+		}
+
+		return match
+	})
+
+	return result
 }
 
 func (r *responseWriter) WriteHeader(statusCode int) {
 	if r.wroteHeader {
 		return
-	}
-
-	if !r.lastModified {
-		r.Header().Del("Last-Modified")
 	}
 
 	r.wroteHeader = true
@@ -152,6 +151,13 @@ func (r *responseWriter) commitTo(rw http.ResponseWriter, body []byte) {
 	if _, err := rw.Write(body); err != nil {
 		log.Printf("unable to write body: %v", err)
 	}
+}
+
+func (r *responseWriter) Header() http.Header {
+	if r.header == nil {
+		r.header = make(http.Header)
+	}
+	return r.header
 }
 
 func cloneHeader(src http.Header) http.Header {

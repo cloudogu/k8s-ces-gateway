@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Security
+- [#27] Only support TLSv1.3
+- [#27] Inject additional security headers into every request
+- [#27] use nonces to prevent malicious inline script execution
 
 ## [v3.1.0] - 2026-05-05
 ### Added 
