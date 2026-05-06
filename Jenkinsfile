@@ -91,8 +91,6 @@ node('docker') {
                         fi
                         
                         echo "TLS configuration is correct: TLS 1.2 disabled, TLS 1.3 enabled"
-                        
-                        # Cleanup port-forward
                         '''
                     }
                 } catch(Exception e) {
