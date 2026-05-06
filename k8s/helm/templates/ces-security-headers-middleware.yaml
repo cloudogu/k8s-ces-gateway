@@ -5,6 +5,8 @@ metadata:
 spec:
   headers:
     customResponseHeaders:
+      # style-src: allow all styles as most dogus load styles from external sources
+      # script-src: allow unsafe-eval for Nexus, SCM and EasyRedmine
       Content-Security-Policy: >-
         default-src 'self';
         script-src 'self' 'unsafe-eval';
