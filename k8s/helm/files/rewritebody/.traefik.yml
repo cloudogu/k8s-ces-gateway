@@ -1,7 +1,9 @@
 displayName: rewritebody
 type: middleware
 import: github.com/traefik/plugin-rewritebody
-summary: Rewrites the body of HTTP requests
+summary: | 
+  Rewrites the body of HTTP requests
+  * applies the given rewrites to the body of the request
 
 # Configuration data for your plugin.
 # This is mandatory,

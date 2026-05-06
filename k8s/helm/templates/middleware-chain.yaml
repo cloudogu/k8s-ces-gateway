@@ -7,4 +7,6 @@ spec:
     middlewares:
       - name: ces-accept-encoding-identity
       - name: ces-rewrite
+      - name: ces-nonce
+      - name: ces-security-headers
       - name: ces-compress

@@ -1,0 +1,5 @@
+displayName: nonce
+type: middleware
+import: github.com/traefik/plugin-nonce
+summary: Adds nonces to all script tags and updates the csp header with the nonce value
+testData: {}

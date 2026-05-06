@@ -60,6 +60,38 @@ node('docker') {
                         // in error "no matching resource found when run the wait command"
                         sleep(20)
                         k3d.kubectl("wait --for=condition=ready pod -l app.kubernetes.io/instance=k8s-ces-gateway-default --timeout=300s")
+
+                        // Make sure that TLS v1.2 is disabled and TLS v1.3 is available
+                        String podname = k3d.kubectl("get pods -o jsonpath='{.items[*].metadata.name}' | tr ' ' '\\n' | grep k8s-ces-gateway-traefik", true).trim()
+                        k3d.kubectl("port-forward pod/$podname 1234:443 > portforward.log 2>&1 &")
+                        sh '''
+                        # Wait for port-forward to be ready
+                        sleep 3
+                        
+                        echo "Testing Traefik TLS configuration on localhost:1234"
+                        
+                        echo "Check for TLS v1.2 not being available"
+                        set +e
+                        openssl s_client -connect localhost:1234 -tls1_2 -brief >/dev/null 2>&1
+                        TLS1_2_available=$?
+                        set -e
+                        if [ "$TLS1_2_available" -eq 0 ]; then
+                          echo "ERROR: TLS 1.2 is available, but it should be disabled!"
+                          exit 1
+                        fi
+                        
+                        echo "Check for TLS v1.3 being available"
+                        set +e
+                        openssl s_client -connect localhost:1234 -tls1_3 -brief >/dev/null 2>&1
+                        TLS1_3_available=$?
+                        set -e
+                        if [ "$TLS1_3_available" -ne 0 ]; then
+                          echo "ERROR: TLS 1.3 is NOT available!"
+                          exit 1
+                        fi
+                        
+                        echo "TLS configuration is correct: TLS 1.2 disabled, TLS 1.3 enabled"
+                        '''
                     }
                 } catch(Exception e) {
                     k3d.collectAndArchiveLogs()
