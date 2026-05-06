@@ -77,10 +77,8 @@ func (n *nonce) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 // generateNonce creates a cryptographically secure random nonce
 func generateNonce() string {
 	b := make([]byte, 16) // 128 bit
-	if _, err := rand.Read(b); err != nil {
-		log.Printf("failed to generate nonce: %v", err)
-		return ""
-	}
+	// rand.Read cannot throw an error per specification
+	rand.Read(b)
 	return base64.StdEncoding.EncodeToString(b)
 }
 

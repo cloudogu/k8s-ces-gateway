@@ -6,7 +6,7 @@ spec:
   headers:
     customResponseHeaders:
       # style-src: allow all styles as most dogus load styles from external sources
-      # script-src: allow unsafe-eval for Nexus, SCM and EasyRedmine
+      # script-src: allow unsafe-eval for at least Nexus, SCM and EasyRedmine
       Content-Security-Policy: >-
         default-src 'self';
         script-src 'self' 'unsafe-eval';
@@ -23,4 +23,3 @@ spec:
       X-XSS-Protection: "0"
       Cross-Origin-Opener-Policy: "same-origin"
       Cross-Origin-Resource-Policy: "same-origin"
-      Permissions-Policy: "geolocation=(), microphone=(), camera=(), payment=()"
