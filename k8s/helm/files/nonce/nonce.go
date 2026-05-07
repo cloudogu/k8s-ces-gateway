@@ -9,6 +9,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"log"
+	"mime"
 	"net"
 	"net/http"
 	"regexp"
@@ -29,13 +30,14 @@ type nonce struct {
 }
 
 type responseWriter struct {
-	buffer      bytes.Buffer
-	wroteHeader bool
-	nonce       string
-	statusCode  int
+	buffer       bytes.Buffer
+	wroteHeader  bool
+	statusCode   int
+	nonce        string
 
-	header http.Header
-	http.ResponseWriter
+	header       http.Header
+	originalRw   http.ResponseWriter
+	passthrough  bool
 }
 
 // New creates and returns a new nonce plugin instance.
@@ -47,31 +49,27 @@ func New(_ context.Context, next http.Handler, _ *Config, name string) (http.Han
 
 func (n *nonce) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	wrappedWriter := &responseWriter{
-		ResponseWriter: rw,
+		originalRw: rw,
 		nonce:          generateNonce(),
 		header:         cloneHeader(rw.Header()),
 	}
 
 	n.next.ServeHTTP(wrappedWriter, req)
+
+	if !wrappedWriter.wroteHeader {
+		wrappedWriter.WriteHeader(http.StatusOK)
+	}
+
+	if wrappedWriter.passthrough {
+		return
+	}
+
 	bodyBytes := wrappedWriter.buffer.Bytes()
-
-	contentEncoding := wrappedWriter.Header().Get("Content-Encoding")
-	if contentEncoding != "" && contentEncoding != "identity" {
-		wrappedWriter.commitTo(rw, bodyBytes)
-		return
-	}
-
-	// Check if response is HTML before adding nonces
-	contentType := wrappedWriter.Header().Get("Content-Type")
-	if !isHTMLContent(contentType) {
-		wrappedWriter.commitTo(rw, bodyBytes)
-		return
-	}
 
 	bodyBytes = wrappedWriter.addNonceToScriptTags(bodyBytes)
 	wrappedWriter.updateCSPWithNonce()
 
-	wrappedWriter.commitTo(rw, bodyBytes)
+	wrappedWriter.commit(bodyBytes)
 }
 
 // generateNonce creates a cryptographically secure random nonce
@@ -118,48 +116,85 @@ func (r *responseWriter) addNonceToScriptTags(body []byte) []byte {
 	return result
 }
 
+func (r *responseWriter) Header() http.Header {
+	if r.passthrough {
+		return r.originalRw.Header()
+	}
+
+	if r.header == nil {
+		r.header = make(http.Header)
+	}
+
+	return r.header
+}
+
+func (r *responseWriter) isContentReplacable() bool {
+	contentType := r.Header().Get("Content-Type")
+	mtype, _, _ := mime.ParseMediaType(contentType)
+
+	if strings.ToLower(mtype) != "text/html" {
+		return false
+	}
+
+	encoding := r.Header().Get("Content-Encoding")
+	if encoding == "" {
+		return true
+	}
+
+	ctype, _, err := mime.ParseMediaType(encoding)
+	if err != nil {
+		return false
+	}
+
+	return ctype == "" || strings.ToLower(ctype) == "identity"
+}
+
 func (r *responseWriter) WriteHeader(statusCode int) {
 	if r.wroteHeader {
 		return
 	}
-
 	r.wroteHeader = true
+
+	if r.passthrough {
+		r.originalRw.WriteHeader(statusCode)
+		return
+	}
+
 	r.statusCode = statusCode
 
-	// Delegates the Content-Length Header creation to the final body write.
-	r.Header().Del("Content-Length")
+	if !r.isContentReplacable() {
+		r.passthrough = true
+		applyHeader(r.originalRw.Header(), r.header)
+		r.originalRw.WriteHeader(statusCode)
+	}
 }
 
-func (r *responseWriter) Write(p []byte) (int, error) {
+func (r *responseWriter) Write(data []byte) (n int, err error) {
 	if !r.wroteHeader {
 		r.WriteHeader(http.StatusOK)
 	}
 
-	return r.buffer.Write(p)
+	if r.passthrough {
+		return r.originalRw.Write(data)
+	}
+
+	return r.buffer.Write(data)
 }
 
-func (r *responseWriter) commitTo(rw http.ResponseWriter, body []byte) {
+func (r *responseWriter) commit(body []byte) {
 	status := r.statusCode
 	if status == 0 {
 		status = http.StatusOK
 	}
 
-	r.Header().Del("Content-Length")
-	applyHeader(rw.Header(), r.Header())
-	rw.WriteHeader(status)
+	r.header.Del("Content-Length")
+	applyHeader(r.originalRw.Header(), r.header)
+	r.originalRw.WriteHeader(status)
 
-	if _, err := rw.Write(body); err != nil {
+	if _, err := r.originalRw.Write(body); err != nil {
 		log.Printf("unable to write body: %v", err)
 	}
 }
-
-func (r *responseWriter) Header() http.Header {
-	if r.header == nil {
-		r.header = make(http.Header)
-	}
-	return r.header
-}
-
 func cloneHeader(src http.Header) http.Header {
 	dst := make(http.Header, len(src))
 	for k, vv := range src {
@@ -182,26 +217,16 @@ func applyHeader(dst, src http.Header) {
 }
 
 func (r *responseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
-	hijacker, ok := r.ResponseWriter.(http.Hijacker)
+	hijacker, ok := r.originalRw.(http.Hijacker)
 	if !ok {
-		return nil, nil, fmt.Errorf("%T is not a http.Hijacker", r.ResponseWriter)
+		return nil, nil, fmt.Errorf("%T is not a http.Hijacker", r.originalRw)
 	}
 
 	return hijacker.Hijack()
 }
 
 func (r *responseWriter) Flush() {
-	if flusher, ok := r.ResponseWriter.(http.Flusher); ok {
+	if flusher, ok := r.originalRw.(http.Flusher); ok {
 		flusher.Flush()
 	}
-}
-
-// isHTMLContent checks if the content type indicates HTML
-func isHTMLContent(contentType string) bool {
-	if contentType == "" {
-		return false
-	}
-
-	// Check for text/html (with or without charset)
-	return len(contentType) >= 9 && contentType[:9] == "text/html"
 }

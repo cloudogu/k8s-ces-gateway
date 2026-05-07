@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"mime"
 	"net"
 	"net/http"
 	"strconv"
@@ -71,54 +72,40 @@ func New(_ context.Context, next http.Handler, config *Config, name string) (htt
 
 func (s *cesErrorPages) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	wrappedWriter := &responseWriter{
-		ResponseWriter: rw,
-		statusCode:     http.StatusOK,
+		originalRw: rw,
+		statusCode: http.StatusOK,
 	}
 
 	s.next.ServeHTTP(wrappedWriter, req)
 
-	statusCode := wrappedWriter.statusCode
+	if !wrappedWriter.wroteHeader {
+		wrappedWriter.WriteHeader(http.StatusOK)
+	}
 
-	// Check if this status code should be handled
-	if !s.statusCodes[statusCode] {
-		s.writeResponse(rw, wrappedWriter, statusCode)
+	if wrappedWriter.passthrough {
 		return
 	}
 
-	contentType := wrappedWriter.Header().Get("Content-Type")
+	statusCode := wrappedWriter.statusCode
+
 	bodyBytes := wrappedWriter.buffer.Bytes()
+
+	// Check if this status code should be handled
+	if !s.statusCodes[statusCode] {
+		wrappedWriter.commit(bodyBytes)
+		return
+	}
 
 	// only redirect to error page if the content type is HTML and the body is empty
 	// some dogus send incorrect status codes with valid html bodies, these should not be redirected
-	if s.isHTMLContent(contentType) && s.isEmptyBody(bodyBytes) {
+	if s.isEmptyBody(bodyBytes) {
 		log.Printf("[CesErrorPages] Redirecting status %d with empty HTML body to error page", statusCode)
 		s.redirectToErrorPage(rw, req, statusCode)
 		return
 	}
 
 	// write original response
-	s.writeResponse(rw, wrappedWriter, statusCode)
-}
-
-func (s *cesErrorPages) writeResponse(rw http.ResponseWriter, wrappedWriter *responseWriter, statusCode int) {
-	for key, values := range wrappedWriter.Header() {
-		// content-length is set automatically
-		if key == "Content-Length" {
-			continue
-		}
-		rw.Header().Del(key)
-		for _, value := range values {
-			rw.Header().Add(key, value)
-		}
-	}
-
-	// Write status code
-	rw.WriteHeader(statusCode)
-
-	// Write body
-	if _, err := rw.Write(wrappedWriter.buffer.Bytes()); err != nil {
-		log.Printf("[CesErrorPages] unable to write body: %v", err)
-	}
+	wrappedWriter.commit(bodyBytes)
 }
 
 // redirectToErrorPage redirects the client to the error page for the given status code
@@ -184,31 +171,127 @@ func (s *cesErrorPages) isEmptyBody(body []byte) bool {
 }
 
 type responseWriter struct {
-	buffer     bytes.Buffer
-	statusCode int
+	buffer      bytes.Buffer
+	wroteHeader bool
+	statusCode  int
 
-	http.ResponseWriter
+	header      http.Header
+	originalRw  http.ResponseWriter
+	passthrough bool
+}
+
+func (r *responseWriter) Header() http.Header {
+	if r.passthrough {
+		return r.originalRw.Header()
+	}
+
+	if r.header == nil {
+		r.header = make(http.Header)
+	}
+
+	return r.header
+}
+
+func (r *responseWriter) isContentReplacable() bool {
+	contentType := r.Header().Get("Content-Type")
+	mtype, _, _ := mime.ParseMediaType(contentType)
+
+	if strings.ToLower(mtype) != "text/html" {
+		return false
+	}
+
+	encoding := r.Header().Get("Content-Encoding")
+	if encoding == "" {
+		return true
+	}
+
+	ctype, _, err := mime.ParseMediaType(encoding)
+	if err != nil {
+		return false
+	}
+
+	return ctype == "" || strings.ToLower(ctype) == "identity"
 }
 
 func (r *responseWriter) WriteHeader(statusCode int) {
+	if r.wroteHeader {
+		return
+	}
+	r.wroteHeader = true
+
+	if r.passthrough {
+		r.originalRw.WriteHeader(statusCode)
+		return
+	}
+
 	r.statusCode = statusCode
-	// Don't call ResponseWriter.WriteHeader yet - we need to buffer everything first
+
+	if !r.isContentReplacable() {
+		r.passthrough = true
+		applyHeader(r.originalRw.Header(), r.header)
+		r.originalRw.WriteHeader(statusCode)
+	}
 }
 
-func (r *responseWriter) Write(p []byte) (int, error) {
-	return r.buffer.Write(p)
+func (r *responseWriter) Write(data []byte) (n int, err error) {
+	if !r.wroteHeader {
+		r.WriteHeader(http.StatusOK)
+	}
+
+	if r.passthrough {
+		return r.originalRw.Write(data)
+	}
+
+	return r.buffer.Write(data)
+}
+
+func (r *responseWriter) commit(body []byte) {
+	status := r.statusCode
+	if status == 0 {
+		status = http.StatusOK
+	}
+
+	r.header.Del("Content-Length")
+	applyHeader(r.originalRw.Header(), r.header)
+	r.originalRw.WriteHeader(status)
+
+	if _, err := r.originalRw.Write(body); err != nil {
+		log.Printf("unable to write body: %v", err)
+	}
+}
+
+func cloneHeader(src http.Header) http.Header {
+	dst := make(http.Header, len(src))
+	for k, vv := range src {
+		cpy := make([]string, len(vv))
+		copy(cpy, vv)
+		dst[k] = cpy
+	}
+	return dst
+}
+
+func applyHeader(dst, src http.Header) {
+	for k := range dst {
+		dst.Del(k)
+	}
+	for k, vv := range src {
+		for _, v := range vv {
+			dst.Add(k, v)
+		}
+	}
 }
 
 func (r *responseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
-	hijacker, ok := r.ResponseWriter.(http.Hijacker)
+	hijacker, ok := r.originalRw.(http.Hijacker)
 	if !ok {
-		return nil, nil, fmt.Errorf("%T is not a http.Hijacker", r.ResponseWriter)
+		return nil, nil, fmt.Errorf("%T is not a http.Hijacker", r.originalRw)
 	}
+
 	return hijacker.Hijack()
 }
 
 func (r *responseWriter) Flush() {
-	if flusher, ok := r.ResponseWriter.(http.Flusher); ok {
+	if flusher, ok := r.originalRw.(http.Flusher); ok {
 		flusher.Flush()
 	}
 }
