@@ -74,6 +74,7 @@ func (s *cesErrorPages) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	wrappedWriter := &responseWriter{
 		originalRw: rw,
 		statusCode: http.StatusOK,
+		header:       cloneHeader(rw.Header()),
 	}
 
 	s.next.ServeHTTP(wrappedWriter, req)
@@ -154,15 +155,6 @@ func (s *cesErrorPages) redirectToErrorPage(rw http.ResponseWriter, req *http.Re
 	if _, err := io.Copy(rw, resp.Body); err != nil {
 		log.Printf("[CesErrorPages] error writing error page body: %v", err)
 	}
-}
-
-// isHTMLContent checks for text/html content type (with or without charset)
-func (s *cesErrorPages) isHTMLContent(contentType string) bool {
-	if contentType == "" {
-		return false
-	}
-	contentType = strings.ToLower(strings.TrimSpace(contentType))
-	return strings.HasPrefix(contentType, "text/html")
 }
 
 // isEmptyBody checks if body is empty or contains only whitespace
