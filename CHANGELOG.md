@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+- [#33] Buffer only non-encoded html-content
+  - This allows streaming responses in the custom middleware-plugins
+
 ## [v3.0.3] - 2026-03-30
 ### Fixed
 - Add imagePullSecret to fix image pull error
