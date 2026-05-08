@@ -7,6 +7,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [v3.0.4] - 2026-05-08
 ### Fixed
 - [#33] Buffer only non-encoded html-content
   - This allows streaming responses in the custom middleware-plugins
