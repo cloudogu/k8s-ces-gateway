@@ -99,7 +99,9 @@ void stageAutomaticRelease() {
         }
 
         stage('Finish Release') {
-            gitflow.finishRelease(changelogVersion, productionReleaseBranch)
+            productionReleaseBranch = makefile.determineGitFlowMainBranch()
+            developmentBranch = makefile.determineGitFlowDevelopBranch()
+            gitflow.finishRelease(releaseVersion, productionReleaseBranch, developmentBranch)
         }
 
         stage('Add Github-Release') {
