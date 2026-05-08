@@ -1,7 +1,7 @@
 # Set these to the desired values
 ARTIFACT_ID=k8s-ces-gateway
 BASE_VERSION=3.0
-VERSION=3.0.3
+VERSION=3.0.4
 
 MAKEFILES_VERSION=10.9.0
 

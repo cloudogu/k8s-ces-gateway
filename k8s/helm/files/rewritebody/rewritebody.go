@@ -7,9 +7,11 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"mime"
 	"net"
 	"net/http"
 	"regexp"
+	"strings"
 )
 
 // Rewrite holds one rewrite body configuration.
@@ -22,6 +24,7 @@ type Rewrite struct {
 type Config struct {
 	LastModified bool      `json:"lastModified,omitempty"`
 	Rewrites     []Rewrite `json:"rewrites,omitempty"`
+	UseNonce     bool      `json:"useNonce,omitempty"`
 }
 
 // CreateConfig creates and initializes the plugin configuration.
@@ -39,6 +42,17 @@ type rewriteBody struct {
 	next         http.Handler
 	rewrites     []rewrite
 	lastModified bool
+}
+
+type responseWriter struct {
+	buffer       bytes.Buffer
+	lastModified bool
+	wroteHeader  bool
+	statusCode   int
+
+	header      http.Header
+	originalRw  http.ResponseWriter
+	passthrough bool
 }
 
 // New creates and returns a new rewrite body plugin instance.
@@ -67,92 +81,146 @@ func New(_ context.Context, next http.Handler, config *Config, name string) (htt
 
 func (r *rewriteBody) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	wrappedWriter := &responseWriter{
-		lastModified:   r.lastModified,
-		ResponseWriter: rw,
+		lastModified: r.lastModified,
+		originalRw:   rw,
+		header:       cloneHeader(rw.Header()),
 	}
 
 	r.next.ServeHTTP(wrappedWriter, req)
 
+	if !wrappedWriter.wroteHeader {
+		wrappedWriter.WriteHeader(http.StatusOK)
+	}
+
+	if wrappedWriter.passthrough {
+		return
+	}
+
 	bodyBytes := wrappedWriter.buffer.Bytes()
-
-	contentEncoding := wrappedWriter.Header().Get("Content-Encoding")
-
-	if contentEncoding != "" && contentEncoding != "identity" {
-		if _, err := rw.Write(bodyBytes); err != nil {
-			log.Printf("unable to write body: %v", err)
-		}
-
-		return
-	}
-
-	// Check if response is HTML before rewriting
-	contentType := wrappedWriter.Header().Get("Content-Type")
-	if !isHTMLContent(contentType) {
-		if _, err := rw.Write(bodyBytes); err != nil {
-			log.Printf("unable to write body: %v", err)
-		}
-		return
-	}
 
 	for _, rwt := range r.rewrites {
 		bodyBytes = rwt.regex.ReplaceAll(bodyBytes, rwt.replacement)
 	}
 
-	if _, err := rw.Write(bodyBytes); err != nil {
-		log.Printf("unable to write rewritten body: %v", err)
-	}
+	wrappedWriter.commit(bodyBytes)
 }
 
-type responseWriter struct {
-	buffer       bytes.Buffer
-	lastModified bool
-	wroteHeader  bool
+func (r *responseWriter) Header() http.Header {
+	if r.passthrough {
+		return r.originalRw.Header()
+	}
 
-	http.ResponseWriter
+	if r.header == nil {
+		r.header = make(http.Header)
+	}
+
+	return r.header
+}
+
+func (r *responseWriter) isContentReplacable() bool {
+	contentType := r.Header().Get("Content-Type")
+	mtype, _, _ := mime.ParseMediaType(contentType)
+
+	if strings.ToLower(mtype) != "text/html" {
+		return false
+	}
+
+	encoding := r.Header().Get("Content-Encoding")
+	if encoding == "" {
+		return true
+	}
+
+	ctype, _, err := mime.ParseMediaType(encoding)
+	if err != nil {
+		return false
+	}
+
+	return ctype == "" || strings.ToLower(ctype) == "identity"
 }
 
 func (r *responseWriter) WriteHeader(statusCode int) {
-	if !r.lastModified {
-		r.ResponseWriter.Header().Del("Last-Modified")
+	if r.wroteHeader {
+		return
 	}
-
 	r.wroteHeader = true
 
-	// Delegates the Content-Length Header creation to the final body write.
-	r.ResponseWriter.Header().Del("Content-Length")
+	if r.passthrough {
+		r.originalRw.WriteHeader(statusCode)
+		return
+	}
 
-	r.ResponseWriter.WriteHeader(statusCode)
+	r.statusCode = statusCode
+
+	if r.isContentReplacable() {
+		if !r.lastModified {
+			r.header.Del("Last-Modified")
+		}
+	} else {
+		r.passthrough = true
+		applyHeader(r.originalRw.Header(), r.header)
+		r.originalRw.WriteHeader(statusCode)
+	}
 }
 
-func (r *responseWriter) Write(p []byte) (int, error) {
+func (r *responseWriter) Write(data []byte) (n int, err error) {
 	if !r.wroteHeader {
 		r.WriteHeader(http.StatusOK)
 	}
 
-	return r.buffer.Write(p)
+	if r.passthrough {
+		return r.originalRw.Write(data)
+	}
+
+	return r.buffer.Write(data)
+}
+
+func (r *responseWriter) commit(body []byte) {
+	status := r.statusCode
+	if status == 0 {
+		status = http.StatusOK
+	}
+
+	r.header.Del("Content-Length")
+	applyHeader(r.originalRw.Header(), r.header)
+	r.originalRw.WriteHeader(status)
+
+	if _, err := r.originalRw.Write(body); err != nil {
+		log.Printf("unable to write body: %v", err)
+	}
+}
+
+func cloneHeader(src http.Header) http.Header {
+	dst := make(http.Header, len(src))
+	for k, vv := range src {
+		cpy := make([]string, len(vv))
+		copy(cpy, vv)
+		dst[k] = cpy
+	}
+	return dst
+}
+
+func applyHeader(dst, src http.Header) {
+	for k := range dst {
+		dst.Del(k)
+	}
+	for k, vv := range src {
+		for _, v := range vv {
+			dst.Add(k, v)
+		}
+	}
 }
 
 func (r *responseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
-	hijacker, ok := r.ResponseWriter.(http.Hijacker)
+	hijacker, ok := r.originalRw.(http.Hijacker)
 	if !ok {
-		return nil, nil, fmt.Errorf("%T is not a http.Hijacker", r.ResponseWriter)
+		return nil, nil, fmt.Errorf("%T is not a http.Hijacker", r.originalRw)
 	}
 
 	return hijacker.Hijack()
 }
 
 func (r *responseWriter) Flush() {
-	if flusher, ok := r.ResponseWriter.(http.Flusher); ok {
+	if flusher, ok := r.originalRw.(http.Flusher); ok {
 		flusher.Flush()
 	}
-}
-
-// isHTMLContent checks if the content type indicates HTML
-func isHTMLContent(contentType string) bool {
-	if contentType == "" {
-		return false
-	}
-
-	// Check for text/html (with or without charset)
-	return len(contentType) >= 9 && contentType[:9] == "text/html"
 }
