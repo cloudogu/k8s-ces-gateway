@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- [#36] disable csp headers and nonce middleware
 
 ## [v3.2.1] - 2026-05-07
 ### Fixed

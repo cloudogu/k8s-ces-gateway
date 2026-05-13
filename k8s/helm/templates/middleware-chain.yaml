@@ -7,6 +7,7 @@ spec:
     middlewares:
       - name: ces-accept-encoding-identity
       - name: ces-rewrite
-      - name: ces-nonce
+      # ces-nonce remains disabled until csp headers are enabled again
+      # - name: ces-nonce
       - name: ces-security-headers
       - name: ces-compress
