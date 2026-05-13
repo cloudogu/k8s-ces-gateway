@@ -7,6 +7,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [v3.2.2] - 2026-05-13
+- [#36] disable csp headers and nonce middleware
+
 ## [v3.2.1] - 2026-05-07
 ### Fixed
 - [#31] Buffer only non encoded html-content
