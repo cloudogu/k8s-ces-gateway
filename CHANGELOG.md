@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Fixed
+- [#35] Revert changes of v3.1.0
+  - use static ports
 
 ## [v3.2.1] - 2026-05-07
 ### Fixed
