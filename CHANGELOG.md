@@ -7,6 +7,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [v3.3.0] - 2026-05-19
+### Fixed
+- [#35] Revert changes of v3.1.0
+  - use static ports
+
 ## [v3.2.2] - 2026-05-13
 - [#36] disable csp headers and nonce middleware
 
