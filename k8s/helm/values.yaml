@@ -114,3 +114,7 @@ traefik:
     default:
       defaultCertificate:
         secretName: ecosystem-certificate
+
+  additionalArguments:
+    - "--entryPoints.web.transport.respondingTimeouts.readTimeout=3600s"
+    - "--entryPoints.websecure.transport.respondingTimeouts.readTimeout=3600s"
