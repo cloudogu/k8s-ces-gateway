@@ -92,12 +92,18 @@ traefik:
     web:
       port: 80
       exposedPort: 80
+      transport:
+        respondingTimeouts:
+          readTimeout: 0
     websecure:
       port: 443
       exposedPort: 443
       middlewares:
         - ecosystem-ces-chain@kubernetescrd
         - ecosystem-ces-error@kubernetescrd
+      transport:
+        respondingTimeouts:
+          readTimeout: 0
     # open static ports for exposed ports in dogus until traefik can load these ports dynamically
     # scm
     tcp-2222:
@@ -114,7 +120,3 @@ traefik:
     default:
       defaultCertificate:
         secretName: ecosystem-certificate
-
-  additionalArguments:
-    - "--entryPoints.web.transport.respondingTimeouts.readTimeout=3600s"
-    - "--entryPoints.websecure.transport.respondingTimeouts.readTimeout=3600s"
