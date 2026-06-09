@@ -1,6 +1,6 @@
 # Konfigurationsoptionen
 
-## 
+## Read-Timeout
 
 Standardmäßig verfügt das dem ces-gateway-Komponente zugrundeliegende Traefik über ein Lese-Timeout (Read Timeout). 
 Das bedeutet, dass eine aktive Verbindung, die Daten an den Server überträgt, nach Ablauf dieser Zeit beendet wird. 
