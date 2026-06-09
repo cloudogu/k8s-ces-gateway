@@ -94,7 +94,7 @@ traefik:
       exposedPort: 80
       transport:
         respondingTimeouts:
-          readTimeout: 0
+          readTimeout: 5m
     websecure:
       port: 443
       exposedPort: 443
@@ -103,7 +103,7 @@ traefik:
         - ecosystem-ces-error@kubernetescrd
       transport:
         respondingTimeouts:
-          readTimeout: 0
+          readTimeout: 5m
     # open static ports for exposed ports in dogus until traefik can load these ports dynamically
     # scm
     tcp-2222:
