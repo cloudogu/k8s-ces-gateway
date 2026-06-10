@@ -7,6 +7,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [v3.3.1] - 2026-06-10
+### Changed
+- [#40] Set reading timeout for web and websure ports to 5 minutes
+### Added
+- [#40] Added documentation on configuring the read timeouts
+
 ## [v3.3.0] - 2026-05-19
 ### Fixed
 - [#35] Revert changes of v3.1.0
