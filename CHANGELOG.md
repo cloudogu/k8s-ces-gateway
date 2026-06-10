@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [v3.3.1] - 2026-06-10
 ### Changed
 - [#40] Set reading timeout for web and websure ports to 5 minutes
 ### Added
