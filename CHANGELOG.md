@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [v3.3.2] - 2026-06-25
+### Fixed
+- [#41] Set the Frame-Options header to `SAMEORIGIN` to allow embedding e.g., drawio editor in bluespice.
+
 ## [v3.3.1] - 2026-06-10
 ### Changed
 - [#40] Set reading timeout for web and websure ports to 5 minutes
