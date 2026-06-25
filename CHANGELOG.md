@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Fixed
+- [#41] Set the Frame-Options header to `SAMEORIGIN` to allow embedding e.g., drawio editor in bluespice.
 
 ## [v3.3.1] - 2026-06-10
 ### Changed
