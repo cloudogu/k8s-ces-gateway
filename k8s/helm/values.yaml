@@ -113,6 +113,10 @@ traefik:
     tcp-50000:
       port: 50000
       protocol: TCP
+    ## ces-exporter
+    tcp-7022:
+      port: 7022
+      protocol: TCP
   service:
     enabled: false
 
