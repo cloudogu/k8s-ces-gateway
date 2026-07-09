@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [v3.3.3] - 2026-07-09
+### Changed
+- [#44] open static port 7022 for ces-exporter
+
 ## [v3.3.2] - 2026-06-25
 ### Fixed
 - [#41] Set the Frame-Options header to `SAMEORIGIN` to allow embedding e.g., drawio editor in bluespice.
