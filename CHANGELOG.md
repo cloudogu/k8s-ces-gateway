@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [v3.3.4] - 2026-07-15
+### Changed
+- [#46] Set default log level to `INFO`.
+
 ## [v3.3.3] - 2026-07-09
 ### Changed
 - [#44] open static port 7022 for ces-exporter
