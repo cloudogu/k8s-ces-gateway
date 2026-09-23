@@ -5,7 +5,7 @@ metavalues:
     name: Log-Level
     description: The central configuration value to set the log level for this component
     keys:
-      - path: traefik.controller.logs.general.level
+      - path: traefik.log.level
         mapping:
           debug: DEBUG
           info: INFO
