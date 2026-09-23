@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [v3.4.0] - 2026-09-23
 ### Changed
 - [#48] Upgrade traefik helm chart from `37.4.0` to `41.5.0` and traefik from `v3.6.12` to `v3.7.13`.
 
