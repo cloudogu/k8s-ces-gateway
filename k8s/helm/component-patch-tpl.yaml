@@ -1,7 +1,7 @@
 apiVersion: v1
 values:
   images:
-    traefik: docker.io/traefik:v3.6.12
+    traefik: docker.io/traefik:v3.7.13
 patches:
   values.yaml:
     traefik:
