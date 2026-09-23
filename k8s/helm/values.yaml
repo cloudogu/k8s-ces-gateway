@@ -14,7 +14,6 @@ networkPolicy:
 
 traefik:
   enabled: true
-  installCRDs: true
   deployment:
     imagePullSecrets:
       - name: ces-container-registries
@@ -61,7 +60,7 @@ traefik:
   image:
     registry: docker.io
     repository: traefik
-    tag:  v3.6.12
+    tag:  v3.7.13
     pullPolicy: IfNotPresent
 
   ingressClass:
@@ -81,12 +80,14 @@ traefik:
     kubernetesCRD:
       enabled: true
       namespaces: []
+      # Reserves the cluster-wide `default` TLSOption and TLSStore for this namespace so that
+      # multiple traefik installations in the same cluster do not override each other.
+      defaultTLSResourcesNamespace: "ecosystem"
 
-  logs:
-    general:
-      level: "INFO"  # DEBUG, INFO, WARN, ERROR
-    access:
-      enabled: true
+  log:
+    level: "INFO"  # DEBUG, INFO, WARN, ERROR
+  accessLog:
+    enabled: true
 
   ports:
     web:
@@ -98,9 +99,10 @@ traefik:
     websecure:
       port: 443
       exposedPort: 443
-      middlewares:
-        - ecosystem-ces-chain@kubernetescrd
-        - ecosystem-ces-error@kubernetescrd
+      http:
+        middlewares:
+          - ecosystem-ces-chain@kubernetescrd
+          - ecosystem-ces-error@kubernetescrd
       transport:
         respondingTimeouts:
           readTimeout: 5m
