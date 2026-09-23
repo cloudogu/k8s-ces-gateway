@@ -52,7 +52,7 @@ node('docker') {
                     }
 
                     stage('Deploy k8s-ces-gateway') {
-                        k3d.helm("install ${repositoryName} ${helmChartDir}")
+                        k3d.helm("install ${repositoryName} ${helmChartDir} --set traefik.providers.kubernetesCRD.defaultTLSResourcesNamespace=default")
                     }
 
                     stage('Test k8s-ces-gateway') {

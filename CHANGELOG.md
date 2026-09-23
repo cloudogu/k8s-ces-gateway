@@ -7,6 +7,16 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [v3.4.0] - 2026-09-23
+### Changed
+- [#48] Upgrade traefik helm chart from `37.4.0` to `41.5.0` and traefik from `v3.6.12` to `v3.7.13`.
+
+### Added
+- [#48] Set `providers.kubernetesCRD.defaultTLSResourcesNamespace` to `ecosystem` so that the cluster-wide
+  `default` TLSOption and TLSStore are only read from the ecosystem namespace. This prevents multiple traefik
+  installations in the same cluster from overriding each other's TLS configuration.
+
+
 ## [v3.3.4] - 2026-07-15
 ### Changed
 - [#46] Set default log level to `INFO`.
