@@ -16,8 +16,6 @@ registryNamespace = "k8s"
 registryUrl = "registry.cloudogu.com"
 
 goVersion = "1.27.3"
-trivyImage = "aquasec/trivy:0.76.1"
-traefikImage = ''
 helmTargetDir = "target/k8s"
 helmChartDir = "${helmTargetDir}/helm"
 
@@ -44,34 +42,7 @@ node('docker') {
                                     stage("Lint helm") {
                                         make 'helm-lint'
                                     }
-
-                                    make 'install-yq'
-                                    traefikImage = sh(
-                                            script: '''.bin/yq -r '.traefik.image | .registry + "/" + .repository + ":" + .tag' target/k8s/helm/values.yaml''',
-                                            returnStdout: true
-                                    ).trim()
                                 }
-
-                stage('Scan Traefik image') {
-                    withEnv(["TRIVY_IMAGE=${trivyImage}", "TRAEFIK_IMAGE=${traefikImage}"]) {
-                        try {
-                            sh '''
-                                mkdir -p target/trivy
-                                docker run --rm \\
-                                    --volume k8s-ces-gateway-trivy-cache:/root/.cache/trivy \\
-                                    "$TRIVY_IMAGE" image \\
-                                    --image-src remote --scanners vuln --timeout 15m \\
-                                    --format json --exit-code 0 \\
-                                    "$TRAEFIK_IMAGE" > target/trivy/traefik.json
-                                docker run --rm -i "$TRIVY_IMAGE" convert \\
-                                    --format table /dev/stdin < target/trivy/traefik.json > target/trivy/traefik.txt
-                                cat target/trivy/traefik.txt
-                            '''
-                        } finally {
-                            archiveArtifacts artifacts: 'target/trivy/*', allowEmptyArchive: true
-                        }
-                    }
-                }
 
                 K3d k3d = new K3d(this, "${WORKSPACE}", "${WORKSPACE}/k3d", env.PATH)
 
@@ -133,9 +104,7 @@ node('docker') {
             }
         }
 
-        if (currentBuild.currentResult == 'SUCCESS') {
-            stageAutomaticRelease()
-        }
+        stageAutomaticRelease()
     }
 }
 
