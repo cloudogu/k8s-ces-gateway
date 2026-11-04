@@ -7,6 +7,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Security
+- [#51] Upgrade traefik helm chart from `41.5.0` to `42.3.0` and traefik from `v3.7.13` to `v3.7.17`.
+- [#51] Update the Jenkins Go build image to 1.27.3 to fix CVE-2026-111497 and CVE-2026-111943.
+
+
 ## [v3.4.0] - 2026-09-23
 ### Changed
 - [#48] Upgrade traefik helm chart from `37.4.0` to `41.5.0` and traefik from `v3.6.12` to `v3.7.13`.

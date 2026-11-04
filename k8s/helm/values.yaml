@@ -60,7 +60,7 @@ traefik:
   image:
     registry: docker.io
     repository: traefik
-    tag:  v3.7.13
+    tag:  v3.7.17
     pullPolicy: IfNotPresent
 
   ingressClass:

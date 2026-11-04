@@ -2,7 +2,7 @@
 ARTIFACT_ID=k8s-ces-gateway
 VERSION=3.4.0
 
-MAKEFILES_VERSION=10.10.0
+MAKEFILES_VERSION=11.2.0
 
 include build/make/variables.mk
 include build/make/self-update.mk
